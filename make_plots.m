@@ -1,3 +1,5 @@
+%% clean up
+close all; clear;
 %% load data
 x = importdata('points.dat');
 B = importdata('B.dat');
@@ -14,3 +16,7 @@ for i = 1:5
     hold on;
     plot(rho(i:5:1500),modBact(i:5:1500),'-','Color',colors{i});
 end
+
+
+
+xlim([0 rho(end)])

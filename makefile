@@ -1,5 +1,5 @@
 # This is only important if MACHINE wasn't set
-MACHINE?=macports
+MACHINE?=cobra
 
 #GCC Macports
 ifeq ($(MACHINE),macports)
