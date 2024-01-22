@@ -19,18 +19,6 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
 
    rank = 0
-
-      DO i_int = 1,6
-            DO i = 1,i_int-1
-               WRITE(6,*) i_int,i
-               CALL FLUSH(6)
-            END DO
-            DO i = i_int+1,6
-               WRITE(6,*) i_int,i
-               CALL FLUSH(6)
-            END DO
-      END DO
-
     !-----------------------------------------------------------------------
     !     Handle Input Arguments
     !-----------------------------------------------------------------------
