@@ -63,7 +63,7 @@ $(EXE): $(OBJ)
 	$(FC) -o $@ $^ $(LDFLAGS) $(LIBS) $(COMP_OPT)
 
 run: $(EXE)
-	$(MPI_RUN) $(MPI_RUN_OPTS) $(EXE) -mumat sphere_mu.dat -nearest 1
+	$(MPI_RUN) $(MPI_RUN_OPTS) $(EXE) -mumat sphere_mu.dat -nearest -1
 
 clean:
 	-rm *.o $(EXE)
