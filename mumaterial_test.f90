@@ -6,9 +6,10 @@ PROGRAM MUMATERIAL_TEST
 
    INTEGER :: istat, size, rank, comm
    CHARACTER(LEN=256) :: filename
+   CHARACTER(LEN=256) :: nearest
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
-   INTEGER :: i_int, nearest
+   INTEGER :: i_int, nn
    DOUBLE PRECISION :: Bx, By, Bz
    INTEGER :: start, finish, rate
 
@@ -26,7 +27,8 @@ PROGRAM MUMATERIAL_TEST
     numargs = 0
     i = 0
     arg1 = ''
-    nearest = -1 ! Default to all tetrahedrons 
+    nn = -1
+
     ! First Handle the input arguments
     CALL GETCARG(1, arg1, numargs)
     ALLOCATE(args(numargs))
@@ -41,6 +43,7 @@ PROGRAM MUMATERIAL_TEST
           case ("-nearest")
                 i = i + 1
                 CALL GETCARG(i, nearest,  numargs)
+		read (nearest, '(I10)') nn
        END SELECT
        i = i + 1
     END DO
@@ -69,7 +72,7 @@ PROGRAM MUMATERIAL_TEST
          CALL MUMATERIAL_INFO(6)
       END IF
 
-      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nearest, comm) ! only set if values need to be changed
+      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, comm) ! only set if values need to be changed
 
       CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm, offset)
 
