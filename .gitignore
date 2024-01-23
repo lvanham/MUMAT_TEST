@@ -1,3 +1,5 @@
 *.o
 x*
 log.txt
+B.dat
+points.dat
