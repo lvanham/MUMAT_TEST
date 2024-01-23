@@ -1,6 +1,4 @@
 clear;
-B_act = importdata('Bexact.dat');
-
 %%
 R = 0.05;
 B0 = [0 0 1];
@@ -39,3 +37,5 @@ for i = 1:length(x)
     r(i,:) = [x(i) y(i) z(i)]/100;
     B(i,:) = Bexact(r(i,:));
 end
+
+save Bexact.dat B -ascii
