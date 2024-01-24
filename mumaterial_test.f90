@@ -134,30 +134,33 @@ PROGRAM MUMATERIAL_TEST
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
-
       allocate(x(n_points))
       allocate(y(n_points))
       allocate(z(n_points))
-
-      x = 0; y = 0; z = 0
 
       do i = 1, num_points(1)
          do j = 1, num_points(2)
                do k = 1, num_points(3)
                   if (num_points(1) .gt. 1) then
-                     r = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                     r         = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                     x(n_temp) = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
                   else
                      r = min(1)
+                     x(n_temp) = min(1)
                   end if
                   if (num_points(2) .gt. 1) then
-                     theta = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
+                     theta     = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
+                     y(n_temp) = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
                   else
                      theta = min(2)
+                     y(n_temp) = min(2)
                   end if
                   if (num_points(3) .gt. 1) then
-                     phi = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3)-1)
+                     phi = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3))
+                     z(n_temp) = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3)-1)
                   else
                      phi = min(3)
+                     z(n_temp) = min(3)
                   end if
                   x(n_temp) = r*sin(theta)*cos(phi)
                   y(n_temp) = r*sin(theta)*sin(phi)
