@@ -6,7 +6,7 @@ mu_r = 500;
 
 chi_m = mu_r-1;
 
-Bexact = @(r) (chi_m)/(1+chi_m/3)*(R/norm(r))^3*( dot(B0,r)*r - B0/3);
+Bexact = @(r) (chi_m)/(1+chi_m/3)*(R/norm(r))^3*( dot(B0,r)*r/norm(r)^2 - B0/3 ) + B0;
 
 %%
 min1 = [500 0 0];
@@ -31,6 +31,7 @@ for i = 1:num_points(1)
 end
 
 %%
+
 B = zeros(length(x),3);
 r = zeros(length(x),3);
 for i = 1:length(x)
