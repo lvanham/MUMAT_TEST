@@ -129,8 +129,8 @@ PROGRAM MUMATERIAL_TEST
       pi = 4.0 * atan(1.0)
       
       min = [500.0, 0.0, 0.0]
-      max = [1000.d0, pi, 2.0*pi]
-      num_points = [7501, 51, 1]![200, 5, 1]
+      max = [750.d0, pi, 2.0*pi]
+      num_points = [5001, 51, 1]![200, 5, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
@@ -143,24 +143,18 @@ PROGRAM MUMATERIAL_TEST
                do k = 1, num_points(3)
                   if (num_points(1) .gt. 1) then
                      r         = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
-                     x(n_temp) = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
                   else
                      r = min(1)
-                     x(n_temp) = min(1)
                   end if
                   if (num_points(2) .gt. 1) then
                      theta     = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
-                     y(n_temp) = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
                   else
                      theta = min(2)
-                     y(n_temp) = min(2)
                   end if
                   if (num_points(3) .gt. 1) then
                      phi = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3))
-                     z(n_temp) = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3)-1)
                   else
                      phi = min(3)
-                     z(n_temp) = min(3)
                   end if
                   x(n_temp) = r*sin(theta)*cos(phi)
                   y(n_temp) = r*sin(theta)*sin(phi)
