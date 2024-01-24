@@ -129,8 +129,7 @@ PROGRAM MUMATERIAL_TEST
       pi = 4.0 * atan(1.0)
       
       min = [500.0, 0.0, 0.0]
-      max = [2000.d0, pi, 2.0*pi]
-      num_points = [15001, 101, 1]![200, 5, 1]
+      max = [1000.d0, pi, 2.0*pi]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
