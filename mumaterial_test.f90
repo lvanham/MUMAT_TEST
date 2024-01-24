@@ -139,6 +139,8 @@ PROGRAM MUMATERIAL_TEST
       allocate(y(n_points))
       allocate(z(n_points))
 
+      x = 0; y = 0; z = 0
+
       do i = 1, num_points(1)
          do j = 1, num_points(2)
                do k = 1, num_points(3)
