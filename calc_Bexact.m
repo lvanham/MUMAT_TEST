@@ -1,6 +1,6 @@
 clear;
 %%
-R = 0.05;
+R = 5;
 B0 = [0 0 1];
 mu_r = 500;
 
@@ -10,8 +10,8 @@ Bexact = @(r) (chi_m)/(1+chi_m/3)*(R/norm(r))^3*( dot(B0,r)*r - B0/3);
 
 %%
 min1 = [500 0 0];
-max1 = [10000 0.5*pi 2*pi];
-num_points = [951 7 1];
+max1 = [2000 0.5*pi 2*pi];
+num_points = [151 7 1];
 npoints = prod(num_points);
 
 n_temp = 1;
