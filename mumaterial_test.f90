@@ -130,6 +130,7 @@ PROGRAM MUMATERIAL_TEST
       
       min = [500.0, 0.0, 0.0]
       max = [1000.d0, pi, 2.0*pi]
+      num_points = [7501, 51, 1]![200, 5, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
