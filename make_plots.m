@@ -1,28 +1,13 @@
 %% Clean up any leftovers from earlier run
 close all; clear;
-%% Load simulation data
+%% Import grid and Bexact
 xyz = importdata('points.dat');
-B = importdata('B.dat');
+B_exact = importdata('Bexact.dat');
+
+%% Load simulation data
+B = importdata('T2625\B_2625_full.dat');
 num_theta = 51;
-
-%% Calculate B_exact
-% Constants
-R = 5; % Major radius [m]
-Rcm = 100*R;
-B0 = [0 0 1]; % Applied B-field [T]
-mu_r = 500; % Relative magnetic permeability 
-chi_m = mu_r-1; % Magnetic susceptibility
-
-% Function for calculating B_exact
-fnc_Bexact = @(r) (chi_m)/(1+chi_m/3)*(R/norm(r))^3*( dot(B0,r)*r/norm(r)^2 - B0/3 ) + B0;
-
-% Allocate array for B_exact then calculate
-B_exact = zeros(size(xyz));
-for i = 1:length(xyz)
-    B_exact(i,:) = fnc_Bexact(xyz(i,:)/100); % /100 as xyz is in cm
-end
-%B_exact = importdata('Bexact.dat'); %c.f. this if necessary
-%% scatter locations [2D]
+%% Scatter plot of locations [2D]
 x = xyz(:,1); z = xyz(:,3);
 if exist('ptsfig')
     delete(ptsfig)
@@ -30,7 +15,8 @@ end
 ptsfig = figure('Name','sampled points','NumberTitle','off');
 scatter(x,z,2); hold on;
 h = rectangle( 'Position',Rcm*[-1 -1 2 2],'Curvature',[1 1],'FaceColor',[0.5 0.5 0.5],'LineStyle','--');
-xlim([min(x) max(x)]); ylim([min(z) max(z)])
+xlim([min(x) max(x)]); 
+ylim([min(z) max(z)])
 xlabel('x [cm]'); ylabel('y [cm]')
 axis square
 
@@ -46,12 +32,10 @@ B(1) = 0;
 if exist('compfig')
     delete(compfig)
 end
-
 compfig = figure('Name','|B| vs |Bexact|','NumberTitle','off');
 h1 = gobjects(1,num_theta); h2 = gobjects(1,num_theta);
 for i = 1:num_theta
-    h1(i) = plot(rho(i:num_theta:pts)-Rcm,modB(i:num_theta:pts),'.');
-    hold on;
+    h1(i) = plot(rho(i:num_theta:pts)-Rcm,modB(i:num_theta:pts),'.'); hold on;
     h2(i) = plot(rho(i:num_theta:pts)-Rcm,modBact(i:num_theta:pts), 'Color', h1(i).Color);
     xlabel('dist from sphere [cm]'); ylabel('mod B [T]')
 end
@@ -60,23 +44,7 @@ for i = 1:num_theta
     cols(i,:) = h1(i).Color;
 end
 xlim(Rcm*[-0.02 1])
-%% Error in |B|
 errB = (modB-modBact)./modBact;
-if exist('errfig') %#ok<*EXIST> 
-    delete(errfig)
-end
-
-errfig = figure('Name','Error in |B|','NumberTitle','off');
-h3 = gobjects(1,num_theta);
-for i = 1:num_theta
-    h3(i) = plot(rho(i:num_theta:pts)-Rcm,errB(i:num_theta:pts),'LineStyle','-','Marker','.','Color',cols(i,:));
-    hold on
-    xlabel('dist from sphere [cm]'); ylabel('error in mod B')
-
-end
-
-ylim([-0.05 0.05])
-xlim(Rcm*[-0.02 1])
 
 %% Error with polar angle
 theta = [0:pi/50:pi];
@@ -93,6 +61,27 @@ for i = 1:length(r_indices)
 end
 xlim([0 pi]); ylim([-0.1 0.1])
 legend('box','off')
+
+return
+%% Error in |B|
+
+if exist('errfig') %#ok<*EXIST> 
+    delete(errfig)
+end
+
+errfig = figure('Name','Error in |B|','NumberTitle','off');
+h3 = gobjects(1,num_theta);
+for i = 1:num_theta
+    h3(i) = plot(rho(i:num_theta:pts)-Rcm,errB(i:num_theta:pts),'LineStyle','-','Marker','.','Color',cols(i,:));
+    hold on
+    xlabel('dist from sphere [cm]'); ylabel('error in mod B')
+
+end
+
+ylim([-0.05 0.05])
+xlim(Rcm*[-0.02 1])
+
+
 %% Component-wise error in B
 Bexact_x = B_exact(:,1); Bexact_z = B_exact(:,3);
 B_x = B(:,1); B_z = B(:,3);
