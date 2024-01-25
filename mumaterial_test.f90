@@ -68,12 +68,11 @@ PROGRAM MUMATERIAL_TEST
       CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
       ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
 
+      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, comm) ! only set if values need to be changed
+      
       IF (rank .eq. 0) THEN
          CALL MUMATERIAL_INFO(6)
       END IF
-
-      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, comm) ! only set if values need to be changed
-
       CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm, offset)
 
       IF (rank .eq. 0) THEN
