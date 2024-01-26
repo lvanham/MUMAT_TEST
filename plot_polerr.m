@@ -28,7 +28,6 @@ thetas = [0:pi/50:pi];
 ntheta = length(thetas);
 
 B_exact = importdata("B_exact.dat");
-size(B_exact)
 len = length(B_exact); len = len/ntheta;
 if ir > len
     disp(['Radial index out of bounds, clamping to ' num2str(len)])

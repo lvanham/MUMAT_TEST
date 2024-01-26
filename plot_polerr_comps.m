@@ -53,8 +53,8 @@ for i = 1:filec
         return
     end
     B_data_x = B_data(:,1); B_data_z = B_data(:,3);
-    error_Bx = (B_data_x-B_exact_x)./abs(B_exact_x);
-    error_Bz = (B_data_z-B_exact_z)./abs(B_exact_z);
+    error_Bx = (B_data_x-B_exact_x);%./abs(B_exact_x);
+    error_Bz = (B_data_z-B_exact_z);%./abs(B_exact_z);
 
     if i == 1
         xfig = figure('Name','Error in x component','NumberTitle','off');
@@ -79,7 +79,7 @@ end
     yline(0,'k--');
     legend(hz,'box','off','interpreter','none')
     xlabel('polar angle [rad]')
-    ylabel('$(B_z-B_{z,\mathrm{exact}})/B_{z,\mathrm{exact}}$','interpreter','latex')
+    ylabel('$\Delta B_z$','interpreter','latex')
     xlim([0 pi])
     ylim([-0.5 0.5])    
     set(gca, 'xtick',[0 pi/4 pi/2 3*pi/4 pi], ...
@@ -91,7 +91,7 @@ end
     yline(0,'k--');
     legend(hx,'box','off','interpreter','none')
     xlabel('polar angle [rad]')
-    ylabel('$(B_x-B_{x,\mathrm{exact}})/B_{x,\mathrm{exact}}$','interpreter','latex')
+    ylabel('$\Delta B_x$','interpreter','latex')
     xlim([0 pi])
     ylim([-0.5 0.5]) 
     set(gca, 'xtick',[0 pi/4 pi/2 3*pi/4 pi], ...
