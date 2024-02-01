@@ -141,7 +141,7 @@ PROGRAM MUMATERIAL_TEST
          do j = 1, num_points(2)
                do k = 1, num_points(3)
                   if (num_points(1) .gt. 1) then
-                     r = [7.426, 265.670, 95.600]+ min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                     r = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
                   else
                      r = min(1)
                   end if
@@ -155,9 +155,9 @@ PROGRAM MUMATERIAL_TEST
                   else
                      phi = min(3)
                   end if
-                  x(n_temp) = r*sin(theta)*cos(phi)
-                  y(n_temp) = r*sin(theta)*sin(phi)
-                  z(n_temp) = r*cos(theta)
+                  x(n_temp) = r*sin(theta)*cos(phi)+7.426
+                  y(n_temp) = r*sin(theta)*sin(phi)+265.670
+                  z(n_temp) = r*cos(theta)+95.6
                   n_temp = n_temp + 1
                enddo
          enddo
