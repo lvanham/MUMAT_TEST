@@ -141,7 +141,7 @@ PROGRAM MUMATERIAL_TEST
          do j = 1, num_points(2)
                do k = 1, num_points(3)
                   if (num_points(1) .gt. 1) then
-                     r = [7.426 265.670 95.600]+ min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                     r = [7.426, 265.670, 95.600]+ min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
                   else
                      r = min(1)
                   end if
