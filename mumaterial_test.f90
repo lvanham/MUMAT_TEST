@@ -127,9 +127,9 @@ PROGRAM MUMATERIAL_TEST
 
       pi = 4.0 * atan(1.0)
       
-      min = [0.0, 0.0, 0.0]
-      max = [500.d0, pi, 2.0*pi]
-      num_points = [1001, 51, 1]![200, 5, 1]
+      min = [120.0, 0.0, 0.0]
+      max = [1000.0, pi, 2.0*pi]
+      num_points = [1000, 6, 6]![200, 5, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
@@ -141,7 +141,7 @@ PROGRAM MUMATERIAL_TEST
          do j = 1, num_points(2)
                do k = 1, num_points(3)
                   if (num_points(1) .gt. 1) then
-                     r         = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                     r = [7.426 265.670 95.600]+ min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
                   else
                      r = min(1)
                   end if
