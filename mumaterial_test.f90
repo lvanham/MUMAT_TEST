@@ -7,10 +7,11 @@ PROGRAM MUMATERIAL_TEST
    INTEGER :: istat, size, rank, comm
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
+   CHARACTER(LEN=256) :: distance
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
    INTEGER :: i_int, nn
-   DOUBLE PRECISION :: Bx, By, Bz
+   DOUBLE PRECISION :: Bx, By, Bz, dist
    INTEGER :: start, finish, rate
 
    integer, parameter :: arg_len = 256
@@ -28,6 +29,7 @@ PROGRAM MUMATERIAL_TEST
     i = 0
     arg1 = ''
     nn = -1
+    dist = -1
 
     ! First Handle the input arguments
     CALL GETCARG(1, arg1, numargs)
@@ -44,6 +46,10 @@ PROGRAM MUMATERIAL_TEST
                 i = i + 1
                 CALL GETCARG(i, nearest,  numargs)
 		read (nearest, '(I10)') nn
+	  case ("-distance")
+		i = i + 1
+		CALL GETCARG(i, distance, numargs)
+		read (dist, '(F10.2)') dist
        END SELECT
        i = i + 1
     END DO
@@ -68,7 +74,7 @@ PROGRAM MUMATERIAL_TEST
       CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
       ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
 
-      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, comm) ! only set if values need to be changed
+      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, dist, comm) ! only set if values need to be changed
       
       IF (rank .eq. 0) THEN
          CALL MUMATERIAL_INFO(6)
@@ -127,10 +133,9 @@ PROGRAM MUMATERIAL_TEST
 
       pi = 4.0 * atan(1.0)
       
-      min = [120.0, 0.0, 0.0]
-      max = [1000.d0, pi, 2.0*pi]
-      num_points = [1000, 6, 6]![200, 5, 1]
-      
+      min = [0.0, 0.0, 0.0]
+      max = [500.d0, pi, 2.0*pi]
+      num_points = [1001, 51, 1]![200, 5, 1]
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
       allocate(x(n_points))
@@ -155,9 +160,9 @@ PROGRAM MUMATERIAL_TEST
                   else
                      phi = min(3)
                   end if
-                  x(n_temp) = r*sin(theta)*cos(phi)+7.426
-                  y(n_temp) = r*sin(theta)*sin(phi)+265.670
-                  z(n_temp) = r*cos(theta)+95.6
+                  x(n_temp) = r*sin(theta)*cos(phi)
+                  y(n_temp) = r*sin(theta)*sin(phi)
+                  z(n_temp) = r*cos(theta)
                   n_temp = n_temp + 1
                enddo
          enddo

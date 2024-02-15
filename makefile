@@ -28,7 +28,7 @@ ifeq ($(MACHINE),$(filter $(MACHINE),cobra raven))
 	ifeq ($(MACHINE),raven)
 		MPI_RUN_OPTS = --nodes=1 --ntasks-per-node=72 --time=0:30:00 -p express
 	else ifeq ($(MACHINE),cobra)
-		MPI_RUN_OPTS = --nodes=1 --ntasks-per-node=40 --time=0:10:00 -p express
+		MPI_RUN_OPTS = --nodes=1 --ntasks-per-node=40 --time=0:15:00 -p express
 	endif
 endif
 
@@ -63,7 +63,7 @@ $(EXE): $(OBJ)
 	$(FC) -o $@ $^ $(LDFLAGS) $(LIBS) $(COMP_OPT)
 
 run: $(EXE)
-	$(MPI_RUN) $(MPI_RUN_OPTS) $(EXE) -mumat sphere_mu.dat -nearest -1
+	$(MPI_RUN) $(MPI_RUN_OPTS) $(EXE) -mumat $(DAT) -nearest $(NEIGHBORS) -distance $(DISTANCE)
 
 clean:
 	-rm *.o $(EXE)
