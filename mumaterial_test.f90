@@ -49,7 +49,7 @@ PROGRAM MUMATERIAL_TEST
 	  case ("-distance")
 		i = i + 1
 		CALL GETCARG(i, distance, numargs)
-		read (dist, '(F10.2)') dist
+		read (distance, '(F10.2)') dist
        END SELECT
        i = i + 1
     END DO
