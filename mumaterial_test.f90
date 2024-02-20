@@ -49,7 +49,7 @@ PROGRAM MUMATERIAL_TEST
 	  case ("-distance")
 		i = i + 1
 		CALL GETCARG(i, distance, numargs)
-		read (distance, '(F10.2)') dist
+		read (distance, '(F10.0)') dist
        END SELECT
        i = i + 1
     END DO
@@ -67,7 +67,7 @@ PROGRAM MUMATERIAL_TEST
       CALL MUMATERIAL_SETVERB(.TRUE.)
    END IF
       !filename = 'sphere_mu.dat'
-
+   IF (rank .eq. 0) WRITE(*,*) dist
       allocate(offset(3))
       offset = [0.0, 0.0, 0.0]
 
@@ -135,7 +135,7 @@ PROGRAM MUMATERIAL_TEST
       
       min = [0.0, 0.0, 0.0]
       max = [500.d0, pi, 2.0*pi]
-      num_points = [1001, 51, 1]![200, 5, 1]
+      num_points = [501, 37, 1]![200, 5, 1]
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
       allocate(x(n_points))

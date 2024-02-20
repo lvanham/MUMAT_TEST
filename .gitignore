@@ -1,0 +1,8 @@
+*.dat
+*.sh
+**/*
+xmumat_test
+output.*
+error.*
+*.o
+*.asv
