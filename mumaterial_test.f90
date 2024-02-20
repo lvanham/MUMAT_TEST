@@ -93,6 +93,7 @@ PROGRAM MUMATERIAL_TEST
       
       ! CALL gen_grid(x, y, z)
       CALL read_grid(grid, x, y, z, istat)
+      
       ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
       ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
       
@@ -139,18 +140,16 @@ PROGRAM MUMATERIAL_TEST
       iunit = 380; istat = 0; lines = 0
       CALL safe_open(iunit,istat,TRIM(gridfile),'old','formatted')
       IF (istat /= 0) RETURN
-      ! count lines
 
-      IF (rank .eq. 0) THEN
-         READ(iunit,*) lines
-         WRITE(6,'(I9)') lines 
-      END IF
+      READ(iunit,*) lines
+      WRITE(6,'(A9,I9)') 'lines:   ',lines 
 
       allocate(x(lines))
       allocate(y(lines))
       allocate(z(lines))
 
       IF (rank .eq. 0) THEN
+         WRITE(6,'(A12)') 'coordinates'
          DO il = 1, lines
             READ(iunit,*) x(il),y(il),z(il)
             WRITE(6,'(F15.7,A,F15.7,A,F15.7)') x(il),',',y(il),',',z(il)
