@@ -93,6 +93,7 @@ PROGRAM MUMATERIAL_TEST
       
       ! CALL gen_grid(x, y, z)
       CALL read_grid(grid, x, y, z, istat)
+
       N_points = size(x)
       IF (rank .eq. 0) THEN
          DO i = 1,N_points
@@ -134,12 +135,11 @@ PROGRAM MUMATERIAL_TEST
       RETURN
    END SUBROUTINE BEXTERNAL
 
-   subroutine read_grid(gridfile,x,y,z,istat,comm)
+   subroutine read_grid(gridfile,x,y,z,istat)
       IMPLICIT NONE
       CHARACTER(LEN=*), INTENT(in) :: gridfile
       DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
       INTEGER, INTENT(inout) :: istat
-      INTEGER, INTENT(inout), OPTIONAL :: comm
       INTEGER :: iunit, lines, il
 
       iunit = 380; istat = 0; lines = 0
@@ -147,6 +147,7 @@ PROGRAM MUMATERIAL_TEST
       IF (istat /= 0) RETURN
 
       READ(iunit,*) lines
+      WRITE(6,*) lines
 
       allocate(x(lines))
       allocate(y(lines))
