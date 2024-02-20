@@ -1,7 +1,7 @@
-intv = 50;
+intv = 1;
 Rcm = 500;
 
-xyz = importdata('Hollow sphere\points_hollow.dat');
+xyz = importdata(char("\\wsl.localhost\Debian\home\lvh\dist_test_hollow\points.dat"));
 
 x = xyz(1:intv:end,1); z = xyz(1:intv:end,3);
 
