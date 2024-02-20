@@ -143,7 +143,7 @@ PROGRAM MUMATERIAL_TEST
 
       IF (rank .eq. 0) THEN
          READ(iunit,*) lines
-         WRITE(6,*)
+         WRITE(6,'(I9)') lines 
       END IF
 
       allocate(x(lines))
