@@ -128,20 +128,22 @@ PROGRAM MUMATERIAL_TEST
       RETURN
    END SUBROUTINE BEXTERNAL
 
-   subroutine read_grid(filename,x,y,z,istat)
+   subroutine read_grid(gridfile,x,y,z,istat,comm)
       IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(in) :: filename
+      CHARACTER(LEN=*), INTENT(in) :: gridfile
       DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
       INTEGER, INTENT(inout) :: istat
+      INTEGER, INTENT(inout), OPTIONAL :: comm
       INTEGER :: iunit, lines, il
 
       iunit = 380; istat = 0; lines = 0
-      CALL safe_open(iunit,istat,TRIM(filename),'old','formatted')
+      CALL safe_open(iunit,istat,TRIM(gridfile),'old','formatted')
       IF (istat /= 0) RETURN
       ! count lines
 
       IF (rank .eq. 0) THEN
          READ(iunit,*) lines
+         WRITE(6,*)
       END IF
 
       allocate(x(lines))
@@ -151,6 +153,7 @@ PROGRAM MUMATERIAL_TEST
       IF (rank .eq. 0) THEN
          DO il = 1, lines
             READ(iunit,*) x(il),y(il),z(il)
+            WRITE(6,'(F15.7,A,F15.7,A,F15.7)') x(il),',',y(il),',',z(il)
          END DO
       END IF
    end subroutine read_grid
