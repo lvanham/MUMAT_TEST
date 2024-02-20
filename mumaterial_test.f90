@@ -17,7 +17,7 @@ PROGRAM MUMATERIAL_TEST
 
    integer, parameter :: arg_len = 256
 
-   INTEGER :: i, numargs, N_points
+   INTEGER :: i, numargs
    CHARACTER*(arg_len) :: arg1
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
 
@@ -94,12 +94,6 @@ PROGRAM MUMATERIAL_TEST
       ! CALL gen_grid(x, y, z)
       CALL read_grid(grid, x, y, z, istat)
 
-      N_points = size(x)
-      IF (rank .eq. 0) THEN
-         DO i = 1,N_points
-            WRITE(6,'(F15.7,A,F15.7,A,F15.7)') x(i),',',y(i),',',z(i)
-         END DO
-      END IF
       ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
       ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
       
@@ -147,7 +141,6 @@ PROGRAM MUMATERIAL_TEST
       IF (istat /= 0) RETURN
 
       READ(iunit,*) lines
-      WRITE(6,*) lines
 
       allocate(x(lines))
       allocate(y(lines))

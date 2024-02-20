@@ -36,19 +36,19 @@ for i_r = 1:num_r
     for i_theta = 1:num_theta
         theta = arr_theta(i_theta);
         for i_phi = 1:num_phi
+            
             phi = arr_phi(i_phi);
         
             new_x(linec) = r*sin(theta)*cos(phi);
             new_y(linec) = r*sin(theta)*sin(phi);
             new_z(linec) = r*cos(theta);
             
-            linec = linec + 1;
         end
     end
 end
 
 new_xyz = [new_x, new_y, new_z];
-
+linec=linec-1;
 
 %% Compare to known poins
 comp_xyz = importdata('\\wsl.localhost\Debian\home\lvh\dist_test_hollow\points.dat');
