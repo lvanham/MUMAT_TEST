@@ -30,7 +30,7 @@ new_y = zeros(num_pts,1);
 new_z = zeros(num_pts,1);
 
 % Loop to create xyz
-jj = 1;
+linec = 1;
 for i_r = 1:num_r
     r = arr_r(i_r);
     for i_theta = 1:num_theta
@@ -38,11 +38,11 @@ for i_r = 1:num_r
         for i_phi = 1:num_phi
             phi = arr_phi(i_phi);
         
-            new_x(jj) = r*sin(theta)*cos(phi);
-            new_y(jj) = r*sin(theta)*sin(phi);
-            new_z(jj) = r*cos(theta);
+            new_x(linec) = r*sin(theta)*cos(phi);
+            new_y(linec) = r*sin(theta)*sin(phi);
+            new_z(linec) = r*cos(theta);
             
-            jj = jj + 1;
+            linec = linec + 1;
         end
     end
 end
@@ -56,11 +56,12 @@ comp_x = comp_xyz(:,1);
 comp_y = comp_xyz(:,2); 
 comp_z = comp_xyz(:,3);
 
-close all; figure;
-plot(new_x-comp_x)
+%close all; figure;
+%plot(new_x-comp_x)
 %% Output
-formatSpec = '%15.7f,%15.7f,%15.7f\n';
+formatSpec = '%15.7f %15.7f %15.7f\n';
 fileID = fopen('points.dat','w');
+fprintf(fileID,'%i\n',linec);
 fprintf(fileID,formatSpec,new_xyz');
 fclose(fileID);
 %fprintf(formatSpec,new_xyz(15012,:))

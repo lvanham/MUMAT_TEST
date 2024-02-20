@@ -8,6 +8,7 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
    CHARACTER(LEN=256) :: distance
+   CHARACTER(LEN=256) :: grid
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
    INTEGER :: i_int, nn
@@ -45,11 +46,15 @@ PROGRAM MUMATERIAL_TEST
           case ("-nearest")
                 i = i + 1
                 CALL GETCARG(i, nearest,  numargs)
-		read (nearest, '(I10)') nn
-	  case ("-distance")
-		i = i + 1
-		CALL GETCARG(i, distance, numargs)
-		read (distance, '(F10.0)') dist
+		          read (nearest, '(I10)') nn
+          case ("-distance")
+                i = i + 1
+                CALL GETCARG(i, distance, numargs)
+                read (distance, '(F10.0)') dist
+          case ("-grid")
+                i = i + 1
+                CALL GETCARG(i, grid, numargs)
+
        END SELECT
        i = i + 1
     END DO
@@ -66,10 +71,10 @@ PROGRAM MUMATERIAL_TEST
       CALL SYSTEM_CLOCK(start)
       CALL MUMATERIAL_SETVERB(.TRUE.)
    END IF
-      !filename = 'sphere_mu.dat'
    IF (rank .eq. 0) WRITE(*,*) dist
       allocate(offset(3))
       offset = [0.0, 0.0, 0.0]
+
 
       CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
       ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
@@ -86,8 +91,8 @@ PROGRAM MUMATERIAL_TEST
          WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
       END IF
       
-      CALL gen_grid(x, y, z)
-
+      ! CALL gen_grid(x, y, z)
+      CALL read_grid(grid, x, y, z, istat)
       ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
       ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
       
@@ -122,6 +127,33 @@ PROGRAM MUMATERIAL_TEST
 
       RETURN
    END SUBROUTINE BEXTERNAL
+
+   subroutine read_grid(filename,x,y,z,istat)
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(in) :: filename
+      DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
+      INTEGER, INTENT(inout) :: istat
+      INTEGER :: iunit, lines, il
+
+      iunit = 380; istat = 0; lines = 0
+      CALL safe_open(iunit,istat,TRIM(filename),'old','formatted')
+      IF (istat /= 0) RETURN
+      ! count lines
+
+      IF (rank .eq. 0) THEN
+         READ(iunit,*) lines
+      END IF
+
+      allocate(x(lines))
+      allocate(y(lines))
+      allocate(z(lines))
+
+      IF (rank .eq. 0) THEN
+         DO il = 1, lines
+            READ(iunit,*) x(il),y(il),z(il)
+         END DO
+      END IF
+   end subroutine read_grid
 
    subroutine gen_grid(x, y, z)
       implicit none
