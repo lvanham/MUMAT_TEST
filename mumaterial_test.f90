@@ -4,7 +4,7 @@ PROGRAM MUMATERIAL_TEST
    INCLUDE "mpif.h"
 
 
-   INTEGER :: istat, size, rank, comm
+   INTEGER :: istat, mysize, rank, comm
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
    CHARACTER(LEN=256) :: distance
@@ -62,7 +62,7 @@ PROGRAM MUMATERIAL_TEST
 
    CALL MPI_INIT(istat)
    comm = MPI_COMM_WORLD
-   CALL MPI_COMM_SIZE(comm, size, istat)
+   CALL MPI_COMM_SIZE(comm, mysize, istat)
    CALL MPI_COMM_RANK(comm, rank, istat)
    
    CALL MUMATERIAL_SETVERB(.FALSE.)
