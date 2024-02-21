@@ -22,8 +22,8 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER*(arg_len) :: arg1
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
 
-   INTEGER, PRIVATE :: istat, mysize, rank, comm
-   INTEGER, PRIVATE :: mystart, myend
+   INTEGER :: istat, mysize, rank, comm
+   INTEGER :: mystart, myend
 
    rank = 0
 
@@ -110,9 +110,9 @@ PROGRAM MUMATERIAL_TEST
          CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
       END DO
 
-      CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, shar_comm, istat)
-      CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, shar_comm, istat)
-      CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, shar_comm, istat)
+      CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+      CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+      CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
 
       deallocate(Bx_local,By_local,Bz_local)
 
