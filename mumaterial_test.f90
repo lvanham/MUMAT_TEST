@@ -123,7 +123,7 @@ PROGRAM MUMATERIAL_TEST
 
       IF (rank .eq. 0) THEN
          WRITE(6,*) "Outputting B-field"
-         OPEN(14, file=TRIM(path)//'/B.dat')
+         OPEN(14, file='./B.dat')
          DO i = 1, n_points
                WRITE(14, "(E15.7,A,E15.7,A,E15.7)") Bx(i), ',', By(i), ',', Bz(i)
          END DO
