@@ -4,22 +4,26 @@ PROGRAM MUMATERIAL_TEST
    INCLUDE "mpif.h"
 
 
-   INTEGER :: istat, mysize, rank, comm
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
    CHARACTER(LEN=256) :: distance
    CHARACTER(LEN=256) :: grid
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
+   DOUBLE PRECISION, DIMENSION(:), allocatable :: Bx, By, Bz
+   DOUBLE PRECISION, DIMENSION(:), allocatable :: Bx_local, By_local, Bz_local
    INTEGER :: i_int, nn
-   DOUBLE PRECISION :: Bx, By, Bz, dist
+   DOUBLE PRECISION :: dist
    INTEGER :: start, finish, rate
 
    integer, parameter :: arg_len = 256
 
-   INTEGER :: i, numargs
+   INTEGER :: i, numargs, N_points
    CHARACTER*(arg_len) :: arg1
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
+
+   INTEGER, PRIVATE :: istat, mysize, rank, comm
+   INTEGER, PRIVATE :: mystart, myend
 
    rank = 0
 
@@ -92,12 +96,47 @@ PROGRAM MUMATERIAL_TEST
       END IF
       
       ! CALL gen_grid(x, y, z)
+      IF (rank .eq. 0) WRITE(6,*) 'Reading grid'
       CALL read_grid(grid, x, y, z, istat)
+      n_points = size(x)
+      
+      IF (rank .eq. 0) WRITE(6,*) 'Calculating B-field'
+
+      allocate(Bx(n_points),By(n_points),Bz(n_points))
+      allocate(Bx_local(n_points),By_local(n_points),Bz_local(n_points))
+
+      CALL MPI_CALC_MYRANGE(comm, 1, n_points, mystart, myend)
+      DO i = mystart, myend
+         CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
+      END DO
+
+      CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, shar_comm, istat)
+      CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, shar_comm, istat)
+      CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, shar_comm, istat)
+
+      deallocate(Bx_local,By_local,Bz_local)
+
+      IF (rank .eq. 0) THEN
+         CALL SYSTEM_CLOCK(finish)
+         WRITE(*,*) "Time to finish B-field calculations: ", real(finish-start)/real(rate)
+      END IF
+
+      IF (rank .eq. 0) THEN
+         WRITE(6,*) "Outputting B-field"
+         OPEN(14, file=TRIM(path)//'/B.dat')
+         DO i = 1, n_points
+               WRITE(14, "(E15.7,A,E15.7,A,E15.7)") Bx(i), ',', By(i), ',', Bz(i)
+         END DO
+         CLOSE(14)
+      END IF
 
       ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
       ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
-      
-      CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm)
+
+      !CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm)
+
+
+
 
       CALL MUMATERIAL_FREE()
 
@@ -151,51 +190,5 @@ PROGRAM MUMATERIAL_TEST
       END DO
 
    end subroutine read_grid
-
-   subroutine gen_grid(x, y, z)
-      implicit none
-      DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
-      integer, dimension(3) :: num_points
-      integer :: n_temp, i, j, k, n_points
-      DOUBLE PRECISION :: r, theta, phi, pi
-      DOUBLE PRECISION, dimension(3) :: min, max
-
-      pi = 4.0 * atan(1.0)
-      
-      min = [0.0, 0.0, 0.0]
-      max = [500.d0, pi, 2.0*pi]
-      num_points = [501, 37, 1]![200, 5, 1]
-      n_temp = 1
-      n_points = num_points(1)*num_points(2)*num_points(3)
-      allocate(x(n_points))
-      allocate(y(n_points))
-      allocate(z(n_points))
-
-      do i = 1, num_points(1)
-         do j = 1, num_points(2)
-               do k = 1, num_points(3)
-                  if (num_points(1) .gt. 1) then
-                     r = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
-                  else
-                     r = min(1)
-                  end if
-                  if (num_points(2) .gt. 1) then
-                     theta     = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
-                  else
-                     theta = min(2)
-                  end if
-                  if (num_points(3) .gt. 1) then
-                     phi = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3))
-                  else
-                     phi = min(3)
-                  end if
-                  x(n_temp) = r*sin(theta)*cos(phi)
-                  y(n_temp) = r*sin(theta)*sin(phi)
-                  z(n_temp) = r*cos(theta)
-                  n_temp = n_temp + 1
-               enddo
-         enddo
-      enddo
-   end subroutine gen_grid
 
 END PROGRAM MUMATERIAL_TEST
