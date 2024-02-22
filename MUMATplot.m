@@ -1,4 +1,4 @@
-function [] = MUMATplot(ir, plottype, ptsfile, Bfile, cells, lexclmid)
+function [] = MUMATplot(ir, plottype, ptsfile, Bfile, cells, lexclmid, offset)
 %MUMATplot Make different plots for verification of MUMAT
 %   Call using MUMATplot(ir, plottype, ptsfile, Bfile, cells )
 %   ir: radial index, 1 <= ir <= # of r values
@@ -6,6 +6,7 @@ function [] = MUMATplot(ir, plottype, ptsfile, Bfile, cells, lexclmid)
 %   Bfile: path to file with exact B field
 %   cells: cell object with paths to simulation B fields
 %   lexclmid: bool for disabling (1) datapoint at theta=pi/2
+%   offset: offset DATA B-fields by a vector
 %   plottypes: ([theta] = function of theta)
 %       'comp_x' 
 %           plot x-component of B-field [theta]
@@ -50,6 +51,7 @@ ntheta = length(theta);
 %% Read points file
 try
     xyz = importdata(ptsfile);
+    xyz = reshape(xyz(2:end),3,[])';
 catch
    disp(['Failed to read ptsfile ' ptsfile])
    return
@@ -80,8 +82,11 @@ for i = 1:filec
     file = cells{i};
     try
         B_temp = importdata(file);
-        B_temp_x = B_temp(:,1); 
-        B_temp_z = B_temp(:,3);
+        if ~exist('offset','var')
+            offset = [0 0 0];
+        end
+        B_temp_x = B_temp(:,1)+offset(1); 
+        B_temp_z = B_temp(:,3)+offset(3);
 
         L = strfind(file,'\');
         n = file(L(end)+1:end);

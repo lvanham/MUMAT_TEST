@@ -1,9 +1,9 @@
 clc; clear;
 
 %% Setup
-%spheretype = 'hollow'; 
-spheretype = 'solid';
-p = '\\wsl.localhost\Debian\home\lvh\dist_test_solid\';
+spheretype = 'hollow'; 
+%spheretype = 'solid';
+p = '\\wsl.localhost\Debian\home\lvh\dist_test_hollow\';
 xyz = importdata([ p 'points.dat']);
 %% 
 mu_0 = 4*pi*1e-7;

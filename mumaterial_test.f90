@@ -26,6 +26,7 @@ PROGRAM MUMATERIAL_TEST
 
    INTEGER :: istat, mysize, rank, comm
    INTEGER :: mystart, myend
+   LOGICAL :: lcomm
 
    rank = 0
 
@@ -67,7 +68,7 @@ PROGRAM MUMATERIAL_TEST
     DEALLOCATE(args)
 
    CALL MPI_INIT(istat)
-   comm = MPI_COMM_WORLD
+   comm = MPI_COMM_WORLD; lcomm = .TRUE.
    CALL MPI_COMM_SIZE(comm, mysize, istat)
    CALL MPI_COMM_RANK(comm, rank, istat)
    
@@ -86,7 +87,8 @@ PROGRAM MUMATERIAL_TEST
       ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
 
       CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, dist, comm) ! only set if values need to be changed
-      
+      IF (lcomm) CALL MPI_BARRIER(comm, istat)
+
       IF (rank .eq. 0) THEN
          CALL MUMATERIAL_INFO(6)
       END IF
@@ -111,13 +113,15 @@ PROGRAM MUMATERIAL_TEST
       DO i = mystart, myend
          CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
          IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") Bx_local(i), ',', By_local(i), ',', Bz_local(i)
-
       END DO
 
-      CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-      CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-      CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-
+      IF (lcomm) CALL MPI_BARRIER(comm,istat)
+      IF (rank .eq. 0 .and. lcomm) THEN
+         CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+         CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+         CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+      END IF
+      IF (lcomm) CALL MPI_BARRIER(comm,istat)
 
       deallocate(Bx_local,By_local,Bz_local)
 
