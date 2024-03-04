@@ -1,3 +1,7 @@
 *.o
 x*
 log.txt
+*.dat
+*.sh
+*.m
+*/*
