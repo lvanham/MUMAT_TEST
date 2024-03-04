@@ -104,26 +104,7 @@ PROGRAM MUMATERIAL_TEST
    END IF
    
    IF (rank .eq. 0) WRITE(6,*) 'Calculating B-field'
-
-   allocate(Bx(n_points),By(n_points),Bz(n_points))
-   allocate(Bx_local(n_points),By_local(n_points),Bz_local(n_points))
-
-   CALL MPI_CALC_MYRANGE(comm, 1, n_points, mystart, myend)
-   DO i = mystart, myend
-      CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
-      IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") x(i), ',', y(i), ',', z(i)
-      IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") Bx_local(i), ',', By_local(i), ',', Bz_local(i)
-   END DO
-
-   IF (lcomm) CALL MPI_BARRIER(comm,istat)
-   IF (rank .eq. 0 .and. lcomm) THEN
-      CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-      CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-      CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-   END IF
-   IF (lcomm) CALL MPI_BARRIER(comm,istat)
-
-   deallocate(Bx_local,By_local,Bz_local)
+   CALL mumaterial_getb_vector(x, y, z, Bx, By, Bz, BEXTERNAL, comm)
 
    IF (rank .eq. 0) THEN
       CALL SYSTEM_CLOCK(finish)
