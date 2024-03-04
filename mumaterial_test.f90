@@ -112,6 +112,7 @@ PROGRAM MUMATERIAL_TEST
       CALL MPI_CALC_MYRANGE(comm, 1, n_points, mystart, myend)
       DO i = mystart, myend
          CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
+         IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") x(i), ',', y(i), ',', z(i)
          IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") Bx_local(i), ',', By_local(i), ',', Bz_local(i)
       END DO
 

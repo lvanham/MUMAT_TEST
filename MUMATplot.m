@@ -1,11 +1,13 @@
-function [] = MUMATplot(ir, plottype, ptsfile, Bfile, cells, lexclmid, offset)
+function [] = MUMATplot(plottype, ir, ntheta, object, ptsfile, Bfile, cells, offset, exclthr)
 %MUMATplot Make different plots for verification of MUMAT
 %   Call using MUMATplot(ir, plottype, ptsfile, Bfile, cells )
 %   ir: radial index, 1 <= ir <= # of r values
 %   ptsfile: path to coordinate file
+%   ntheta: number of thetas
+%   object: 'solid_sphere' or 'hollow_sphere'
 %   Bfile: path to file with exact B field
 %   cells: cell object with paths to simulation B fields
-%   lexclmid: bool for disabling (1) datapoint at theta=pi/2
+%   exclthr: if B_exact<exclthr, corresponding theta is ignored in errplots
 %   offset: offset DATA B-fields by a vector
 %   plottypes: ([theta] = function of theta)
 %       'comp_x' 
@@ -45,8 +47,8 @@ end
 ir = max(ir,1);
 
 R = 500; % Radius in mm
-theta = [0:pi/36:pi]; % array of angles
-ntheta = length(theta);
+theta = [0:pi/(ntheta-1):pi]; % array of angles
+%ntheta = length(theta);
 
 %% Read points file
 try
@@ -68,7 +70,12 @@ try
         disp(['Radial index out of bounds, clamping to ' num2str(len)])
         ir = len;
     end
-    dist = norm(xyz(1 + ntheta*(ir-1),:))-R;
+    switch object
+        case 'solid_sphere'
+            dist = norm(xyz(1 + ntheta*(ir-1),:))-R;
+        case 'hollow_sphere'
+            dist = R-norm(xyz(1 + ntheta*(ir-1),:));
+    end
     slice = [1 + (ntheta*(ir-1) ):ntheta*ir];
 catch
    disp(['Failed to read Bfile ' Bfile])
@@ -82,9 +89,6 @@ for i = 1:filec
     file = cells{i};
     try
         B_temp = importdata(file);
-        if ~exist('offset','var')
-            offset = [0 0 0];
-        end
         B_temp_x = B_temp(:,1)+offset(1); 
         B_temp_z = B_temp(:,3)+offset(3);
 
@@ -131,7 +135,9 @@ switch plottype
         xlabel('polar angle [rad]')
         ylabel('$B_x$ [T]','interpreter','latex')
         xlim([0 pi])
-        ylim([-1.5 1.5]*max(abs(B_exact_x)));
+        if max(abs(B_exact_x))~=0
+            ylim([-1.5 1.5]*max(abs(B_exact_x)));
+        end
         set(gca, 'xtick',[0 pi/4 pi/2 3*pi/4 pi], ...
         'XTickLabel',{'$0$', '$\pi/4$','$\pi/2$','$3\pi/4$','$\pi$'}, ...
         'TickLabelInterpreter','latex')
@@ -261,10 +267,30 @@ switch plottype
         hx = gobjects(1,filec+1);
         figure; hx(1) = yline(0,'k--','LineWidth',lw);
         hold on
+
+        yl1 = 100000; yl2 = -100000;
         for i = 1:filec
             stp = ['file' char(string(i))];
             data = B_struct.([stp '_Bx'])(slice)-B_exact_x(slice);
             data = data./abs(B_exact_x(slice));
+
+            if logical(exclthr)
+
+                rm_ind = sub_thresh(B_exact_x(slice),exclthr);
+                size(rm_ind);
+                for j = length(rm_ind):-1:1
+                    data(rm_ind(j)) = [];
+                    if i == 1
+                        rectangle( 'Position',[theta(rm_ind(j))-pi/(2*ntheta) -10 pi/ntheta  20],'FaceColor',[0.7 0.7 0.7]);
+                        theta(rm_ind(j)) = [];
+                    end
+                end
+
+                yl1 = min(yl1,min(data)*1.5);
+                yl2 = max(yl2,max(data)*1.5);
+                ylim([yl1 yl2])
+            end
+
             hx(i+1) = plot(theta, data,'-o', ...
                 'DisplayName',B_struct.([stp '_name']), ...
                 'LineWidth',lw, ...
@@ -285,10 +311,28 @@ switch plottype
         hz = gobjects(1,filec+1);
         figure; hz(1) = yline(0,'k--','LineWidth',lw);
         hold on
+
+        yl1 = 100000; yl2 = -100000;
         for i = 1:filec
             stp = ['file' char(string(i))];
             data = B_struct.([stp '_Bz'])(slice)-B_exact_z(slice);
             data = data./abs(B_exact_z(slice));
+            if logical(exclthr)
+
+                rm_ind = sub_thresh(B_exact_z(slice),exclthr);
+                size(rm_ind);
+                for j = length(rm_ind):-1:1
+                    data(rm_ind(j)) = [];
+                    if i == 1
+                        rectangle( 'Position',[theta(rm_ind(j))-pi/(2*ntheta) -10 pi/ntheta  20],'FaceColor',[0.7 0.7 0.7]);
+                        theta(rm_ind(j)) = [];
+                    end
+                end
+
+                yl1 = min(yl1,min(data)*1.5);
+                yl2 = max(yl2,max(data)*1.5);
+                ylim([yl1 yl2])
+            end
             hz(i+1) = plot(theta, data,'-o', ...
                 'DisplayName',B_struct.([stp '_name']), ...
                 'LineWidth',lw);
@@ -309,19 +353,23 @@ switch plottype
         figure; hx(1) = yline(0,'k--','LineWidth',lw);
         hold on
 
-        if lexclmid
-            theta(ceil(end/2)) = [];
-            ntheta = length(theta);
-            rectangle( 'Position',[pi/2-pi/(2*ntheta) -10 pi/ntheta  20],'FaceColor',[0.7 0.7 0.7],'LineStyle','--');
-        end
-
         yl1 = 100000; yl2 = -100000;
         for i = 1:filec
             stp = ['file' char(string(i))];
             data = B_struct.([stp '_modB'])(slice)-mod_B_exact(slice);
             data = data./(mod_B_exact(slice));
-            if lexclmid
-                data(ceil(end/2)) = [];
+            if logical(exclthr)
+
+                rm_ind = sub_thresh(mod_B_exact(slice),exclthr);
+                size(rm_ind);
+                for j = length(rm_ind):-1:1
+                    data(rm_ind(j)) = [];
+                    if i == 1
+                        rectangle( 'Position',[theta(rm_ind(j))-pi/(2*ntheta) -10 pi/ntheta  20],'FaceColor',[0.7 0.7 0.7]);
+                        theta(rm_ind(j)) = [];
+                    end
+                end
+
                 yl1 = min(yl1,min(data)*1.5);
                 yl2 = max(yl2,max(data)*1.5);
                 ylim([yl1 yl2])
@@ -343,11 +391,6 @@ switch plottype
        
     case 'error_mod_B_avg'
 
-        if lexclmid
-            theta(ceil(end/2)) = [];
-            ntheta = length(theta);
-        end
-
         hx = gobjects(1,filec);
         figure; 
         hold on
@@ -355,8 +398,18 @@ switch plottype
             stp = ['file' char(string(i))];
             data = B_struct.([stp '_modB'])(slice)-mod_B_exact(slice);
             data = abs(data)./abs(mod_B_exact(slice));
-            if lexclmid
-                data(ceil(end/2)) = [];
+
+            if logical(exclthr)
+
+                rm_ind = sub_thresh(B_exact_x(slice),exclthr);
+                size(rm_ind);
+                for j = length(rm_ind):-1:1
+                    data(rm_ind(j)) = [];
+                    if i == 1
+                        theta(rm_ind(j)) = [];
+                    end
+                end
+                ntheta = length(theta);
             end
             data = sum(data)/ntheta;
 
@@ -370,6 +423,11 @@ switch plottype
         %'TickLabelInterpreter','latex')
         title(['distance = ' char(string(dist)) ' mm'])
     otherwise
-        disp('Plottype invalid.')
-       
-end  
+        disp('Plottype invalid.')   
+end
+
+end
+
+function indices = sub_thresh(data,thresh)
+    indices = find(abs(data)<abs(thresh));
+end

@@ -5,6 +5,7 @@ spheretype = 'hollow';
 %spheretype = 'solid';
 p = '\\wsl.localhost\Debian\home\lvh\dist_test_hollow\';
 xyz = importdata([ p 'points.dat']);
+xyz = reshape(xyz(2:end),3,[])';
 %% 
 mu_0 = 4*pi*1e-7;
 zhat = [0 0 1];
