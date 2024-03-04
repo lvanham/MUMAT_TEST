@@ -78,82 +78,81 @@ PROGRAM MUMATERIAL_TEST
       CALL SYSTEM_CLOCK(start)
       CALL MUMATERIAL_SETVERB(.TRUE.)
    END IF
-   IF (rank .eq. 0) WRITE(*,*) dist
-      allocate(offset(3))
-      offset = [0.0, 0.0, 0.0]
 
+   IF (rank .eq. 0) WRITE(6,*) 'Reading grid'
+   CALL read_grid(grid, x, y, z, istat)
+   n_points = size(x)
+   IF (rank .eq. 0) WRITE(6,'(A,I12)') 'Grid read, size ', n_points
 
-      CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
-      ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
+   allocate(offset(3))
+   offset = [0.0, 0.0, 0.0]
 
-      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, dist, comm) ! only set if values need to be changed
-      IF (lcomm) CALL MPI_BARRIER(comm, istat)
+   CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
+   ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
 
-      IF (rank .eq. 0) THEN
-         CALL MUMATERIAL_INFO(6)
-      END IF
-      CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm, offset)
+   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, dist, comm) ! only set if values need to be changed
+   IF (lcomm) CALL MPI_BARRIER(comm, istat)
 
-      IF (rank .eq. 0) THEN
-         CALL SYSTEM_CLOCK(finish)
-         WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
-      END IF
-      
-      ! CALL gen_grid(x, y, z)
-      IF (rank .eq. 0) WRITE(6,*) 'Reading grid'
-      CALL read_grid(grid, x, y, z, istat)
-      n_points = size(x)
-      
-      IF (rank .eq. 0) WRITE(6,*) 'Calculating B-field'
+   IF (rank .eq. 0) THEN
+      CALL MUMATERIAL_INFO(6)
+   END IF
+   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm, offset)
 
-      allocate(Bx(n_points),By(n_points),Bz(n_points))
-      allocate(Bx_local(n_points),By_local(n_points),Bz_local(n_points))
+   IF (rank .eq. 0) THEN
+      CALL SYSTEM_CLOCK(finish)
+      WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
+   END IF
+   
+   IF (rank .eq. 0) WRITE(6,*) 'Calculating B-field'
 
-      CALL MPI_CALC_MYRANGE(comm, 1, n_points, mystart, myend)
-      DO i = mystart, myend
-         CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
-         IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") x(i), ',', y(i), ',', z(i)
-         IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") Bx_local(i), ',', By_local(i), ',', Bz_local(i)
+   allocate(Bx(n_points),By(n_points),Bz(n_points))
+   allocate(Bx_local(n_points),By_local(n_points),Bz_local(n_points))
+
+   CALL MPI_CALC_MYRANGE(comm, 1, n_points, mystart, myend)
+   DO i = mystart, myend
+      CALL mumaterial_getbmag_scalar(x(i), y(i), z(i), Bx_local(i), By_local(i), Bz_local(i))
+      IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") x(i), ',', y(i), ',', z(i)
+      IF (rank .eq. 0)  WRITE(6,"(E15.7,A,E15.7,A,E15.7)") Bx_local(i), ',', By_local(i), ',', Bz_local(i)
+   END DO
+
+   IF (lcomm) CALL MPI_BARRIER(comm,istat)
+   IF (rank .eq. 0 .and. lcomm) THEN
+      CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+      CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+      CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
+   END IF
+   IF (lcomm) CALL MPI_BARRIER(comm,istat)
+
+   deallocate(Bx_local,By_local,Bz_local)
+
+   IF (rank .eq. 0) THEN
+      CALL SYSTEM_CLOCK(finish)
+      WRITE(*,*) "Time to finish B-field calculations: ", real(finish-start)/real(rate)
+   END IF
+
+   IF (rank .eq. 0) THEN
+      WRITE(6,*) "Outputting B-field"
+      OPEN(14, file='./B.dat')
+      DO i = 1, n_points
+            WRITE(14, "(E15.7,A,E15.7,A,E15.7)") Bx(i), ',', By(i), ',', Bz(i)
       END DO
+      CLOSE(14)
+   END IF
 
-      IF (lcomm) CALL MPI_BARRIER(comm,istat)
-      IF (rank .eq. 0 .and. lcomm) THEN
-         CALL MPI_ALLREDUCE(Bx_local, Bx, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-         CALL MPI_ALLREDUCE(By_local, By, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-         CALL MPI_ALLREDUCE(Bz_local, Bz, n_points, MPI_DOUBLE_PRECISION, MPI_SUM, comm, istat)
-      END IF
-      IF (lcomm) CALL MPI_BARRIER(comm,istat)
+   ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
+   ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
 
-      deallocate(Bx_local,By_local,Bz_local)
-
-      IF (rank .eq. 0) THEN
-         CALL SYSTEM_CLOCK(finish)
-         WRITE(*,*) "Time to finish B-field calculations: ", real(finish-start)/real(rate)
-      END IF
-
-      IF (rank .eq. 0) THEN
-         WRITE(6,*) "Outputting B-field"
-         OPEN(14, file='./B.dat')
-         DO i = 1, n_points
-               WRITE(14, "(E15.7,A,E15.7,A,E15.7)") Bx(i), ',', By(i), ',', Bz(i)
-         END DO
-         CLOSE(14)
-      END IF
-
-      ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
-      ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
-
-      !CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm)
+   !CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm)
 
 
 
 
-      CALL MUMATERIAL_FREE()
+   CALL MUMATERIAL_FREE()
 
-      IF (rank .eq. 0) THEN
-         CALL SYSTEM_CLOCK(finish)
-         WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
-      END IF
+   IF (rank .eq. 0) THEN
+      CALL SYSTEM_CLOCK(finish)
+      WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
+   END IF
 
    CALL MPI_FINALIZE(istat)
 
