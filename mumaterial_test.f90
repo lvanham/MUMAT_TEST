@@ -77,6 +77,10 @@ PROGRAM MUMATERIAL_TEST
       IF (rank .eq. 0) THEN
          CALL SYSTEM_CLOCK(finish)
          WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
+         
+         OPEN(14, file=TRIM(path)//'time.dat')
+         WRITE(14,"(E15.7)") real(finish-start)/real(rate)
+         CLOSE(14)
       END IF
       
       CALL gen_grid(x, y, z)
