@@ -122,7 +122,7 @@ PROGRAM MUMATERIAL_TEST
       
       min = [500.0, 0.0, 0.0]
       max = [750.d0, pi, 2.0*pi]
-      num_points = [251, 5, 1]![200, 5, 1]
+      num_points = [251, 51, 1]![200, 5, 1]
       ! min = [-10.0, -10.0, -10.0]
       ! max = [10.0, 10.0, 10.0]
       ! num_points = [300, 300, 300]
