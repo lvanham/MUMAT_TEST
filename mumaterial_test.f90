@@ -103,9 +103,9 @@ PROGRAM MUMATERIAL_TEST
       CALL SYSTEM_CLOCK(finish)
       WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
 
-      OPEN(14, file='./time.dat')
-      WRITE(14,"(E15.7)") real(finish-start)/real(rate)
-      CLOSE(14)
+      OPEN(27, file='./time.dat')
+      WRITE(27,"(E15.7)") real(finish-start)/real(rate)
+      CLOSE(27)
    END IF
    
    IF (rank .eq. 0) WRITE(6,*) 'Calculating B-field'
