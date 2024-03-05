@@ -63,7 +63,7 @@ $(EXE): $(OBJ)
 	$(FC) -o $@ $^ $(LDFLAGS) $(LIBS) $(COMP_OPT)
 
 run: $(EXE)
-	$(MPI_RUN) $(MPI_RUN_OPTS) $(EXE) -mumat $(DAT) -nearest $(NEIGHBORS) -distance $(DISTANCE)
+	$(MPI_RUN) $(MPI_RUN_OPTS) $(EXE) -mumat $(DAT) -nearest $(NEIGHBORS) -distance $(DISTANCE) -grid $(GRID)
 
 clean:
 	-rm *.o $(EXE)
