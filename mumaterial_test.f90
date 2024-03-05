@@ -73,16 +73,17 @@ PROGRAM MUMATERIAL_TEST
    CALL MPI_COMM_RANK(comm, rank, istat)
    
    CALL MUMATERIAL_SETVERB(.FALSE.)
+   IF (rank .eq. 0) WRITE(6,*) 'Reading grid'
+   CALL read_grid(grid, x, y, z, istat)
+   n_points = size(x)
+   IF (rank .eq. 0) WRITE(6,'(A,I12)') 'Grid read, size ', n_points
+
    IF (rank .eq. 0) THEN
       CALL SYSTEM_CLOCK(count_rate=rate)
       CALL SYSTEM_CLOCK(start)
       CALL MUMATERIAL_SETVERB(.TRUE.)
    END IF
 
-   IF (rank .eq. 0) WRITE(6,*) 'Reading grid'
-   CALL read_grid(grid, x, y, z, istat)
-   n_points = size(x)
-   IF (rank .eq. 0) WRITE(6,'(A,I12)') 'Grid read, size ', n_points
 
    allocate(offset(3))
    offset = [0.0, 0.0, 0.0]
