@@ -6,6 +6,7 @@ PROGRAM MUMATERIAL_TEST
 
    INTEGER :: istat, size, rank, comm
    CHARACTER(LEN=256) :: filename
+   CHARACTER(LEN=256) :: nearest
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
    INTEGER :: i_int, nn
@@ -39,7 +40,8 @@ PROGRAM MUMATERIAL_TEST
                 CALL GETCARG(i, filename, numargs)
           case ("-nearest")
                 i = i + 1
-                CALL GETCARG(i, nn, numargs)
+                CALL GETCARG(i, nearest, numargs)
+                read (nearest, '(I10)') nn
        END SELECT
        i = i + 1
     END DO
