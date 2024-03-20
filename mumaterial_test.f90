@@ -4,9 +4,13 @@ PROGRAM MUMATERIAL_TEST
    INCLUDE "mpif.h"
 
 
-   INTEGER :: istat, size, rank, comm
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
+
+   INTEGER :: istat, comm_world, shar_comm, comm_master
+   INTEGER :: shar_rank, master_rank
+   LOGICAL :: lismaster
+
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
    INTEGER :: i_int, nn
@@ -19,83 +23,84 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER*(arg_len) :: arg1
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
 
-   rank = 0
-    !-----------------------------------------------------------------------
-    !     Handle Input Arguments
-    !-----------------------------------------------------------------------
-    numargs = 0
-    i = 0
-    arg1 = ''
-    nn=-1
-    ! First Handle the input arguments
-    CALL GETCARG(1, arg1, numargs)
-    ALLOCATE(args(numargs))
-    ! Cycle through Arguments
-    i = 1
-    DO WHILE (i <= numargs)
-       call GETCARG(i, args(i), numargs)
-       select case (args(i))
-          case ("-mumat")
-                i = i + 1
-                CALL GETCARG(i, filename, numargs)
-          case ("-nearest")
-                i = i + 1
-                CALL GETCARG(i, nearest, numargs)
-                read (nearest, '(I10)') nn
-       END SELECT
-       i = i + 1
-    END DO
-    DEALLOCATE(args)
+   shar_rank = 0
+   master_rank = 0
+   lismaster = .FALSE.
+   !-----------------------------------------------------------------------
+   !     Handle Input Arguments
+   !-----------------------------------------------------------------------
+   numargs = 0
+   i = 0
+   arg1 = ''
+   nn=-1
+   ! First Handle the input arguments
+   CALL GETCARG(1, arg1, numargs)
+   ALLOCATE(args(numargs))
+   ! Cycle through Arguments
+   i = 1
+   DO WHILE (i <= numargs)
+      call GETCARG(i, args(i), numargs)
+      select case (args(i))
+         case ("-mumat")
+            i = i + 1
+            CALL GETCARG(i, filename, numargs)
+         case ("-nearest")
+            i = i + 1
+            CALL GETCARG(i, nearest, numargs)
+            read (nearest, '(I10)') nn
+      END SELECT
+      i = i + 1
+   END DO
+   DEALLOCATE(args)
 
    CALL MPI_INIT(istat)
-   comm = MPI_COMM_WORLD
-   CALL MPI_COMM_SIZE(comm, size, istat)
-   CALL MPI_COMM_RANK(comm, rank, istat)
+   comm_world = MPI_COMM_WORLD
+   CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master, istat)
+   CALL MPI_COMM_RANK( shar_comm, shar_rank, istat)
+   IF (shar_rank.EQ.0) THEN
+        CALL MPI_COMM_RANK( comm_master, master_rank, istat)
+        IF (master_rank.EQ.0) lismaster = .TRUE.
+   END IF
    
    CALL MUMATERIAL_SETVERB(.FALSE.)
-   IF (rank .eq. 0) THEN
+   IF (lismaster) THEN
       CALL SYSTEM_CLOCK(count_rate=rate)
       CALL SYSTEM_CLOCK(start)
       CALL MUMATERIAL_SETVERB(.TRUE.)
    END IF
-      !filename = 'sphere_mu.dat'
 
-      allocate(offset(3))
-      offset = [0.0, 0.0, 0.0]
+   allocate(offset(3))
+   offset = [0.0, 0.0, 0.0]
 
-      CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
-      ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
+   CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master)
+   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
 
-      CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, comm) ! only set if values need to be changed
+   IF (lismaster) CALL MUMATERIAL_INFO(6)
 
-      IF (rank .eq. 0) THEN
-         CALL MUMATERIAL_INFO(6)
-      END IF
+   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm_world, shar_comm, comm_master, offset)
 
-      CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm, offset)
-
-      IF (rank .eq. 0) THEN
-         CALL SYSTEM_CLOCK(finish)
-         WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
-         
-         OPEN(14, file='./time.dat')
-         WRITE(14,"(E15.7)") real(finish-start)/real(rate)
-         CLOSE(14)
-      END IF
+   IF (lismaster) THEN
+      CALL SYSTEM_CLOCK(finish)
+      WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
       
-      CALL gen_grid(x, y, z)
+      OPEN(14, file='./time.dat')
+      WRITE(14,"(E15.7)") real(finish-start)/real(rate)
+      CLOSE(14)
+   END IF
+   
+   CALL gen_grid(x, y, z)
 
-      ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
-      ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
-      
-      CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm)
+   ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
+   ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
+   
+   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm_world, shar_comm, comm_master)
 
-      CALL MUMATERIAL_FREE()
+   CALL MUMATERIAL_FREE()
 
-      IF (rank .eq. 0) THEN
-         CALL SYSTEM_CLOCK(finish)
-         WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
-      END IF
+   IF (rank .eq. 0) THEN
+      CALL SYSTEM_CLOCK(finish)
+      WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
+   END IF
 
    CALL MPI_FINALIZE(istat)
 
@@ -132,10 +137,7 @@ PROGRAM MUMATERIAL_TEST
       
       min = [500.0, 0.0, 0.0]
       max = [750.d0, pi, 2.0*pi]
-      num_points = [251, 51, 1]![200, 5, 1]
-      ! min = [-10.0, -10.0, -10.0]
-      ! max = [10.0, 10.0, 10.0]
-      ! num_points = [300, 300, 300]
+      num_points = [251, 51, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
