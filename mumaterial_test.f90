@@ -97,7 +97,7 @@ PROGRAM MUMATERIAL_TEST
 
    CALL MUMATERIAL_FREE()
 
-   IF (lismaster .eq. 0) THEN
+   IF (lismaster) THEN
       CALL SYSTEM_CLOCK(finish)
       WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
    END IF
