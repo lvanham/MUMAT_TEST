@@ -9,7 +9,7 @@ PROGRAM MUMATERIAL_TEST
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
-   LOGICAL :: lismaster
+   LOGICAL :: lismaster, lverb, ldebug
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
@@ -61,12 +61,19 @@ PROGRAM MUMATERIAL_TEST
         CALL MPI_COMM_RANK( comm_master, master_rank, istat)
         IF (master_rank.EQ.0) lismaster = .TRUE.
    END IF
-   
-   CALL MUMATERIAL_SETVERB(.FALSE.)
+   IF (lismaster) THEN 
+    lverb = .TRUE.
+    ldebug = .TRUE.
+   ELSE 
+    lverb = .FALSE.
+    ldebug = .FALSE.
+   END IF
+
+   CALL MUMATERIAL_SETVERB(lverb)
+   CALL MUMATERIAL_DEBUG(ldebug)
    IF (lismaster) THEN
       CALL SYSTEM_CLOCK(count_rate=rate)
       CALL SYSTEM_CLOCK(start)
-      CALL MUMATERIAL_SETVERB(.TRUE.)
    END IF
 
    allocate(offset(3))
