@@ -76,7 +76,7 @@ PROGRAM MUMATERIAL_TEST
    CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
-
+   CALL MPI_BARRIER(comm_world, istat)
    CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm_world, shar_comm, comm_master, offset)
 
    IF (lismaster) THEN
