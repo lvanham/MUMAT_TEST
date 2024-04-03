@@ -63,7 +63,7 @@ PROGRAM MUMATERIAL_TEST
    END IF
    IF (lismaster) THEN 
     lverb = .TRUE.
-    ldebug = .TRUE.
+    ldebug = .FALSE.
    ELSE 
     lverb = .FALSE.
     ldebug = .FALSE.
