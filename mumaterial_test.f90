@@ -8,14 +8,15 @@ PROGRAM MUMATERIAL_TEST
 
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
-   CHARACTER(LEN=256) :: distance
-   CHARACTER(LEN=256) :: grid
+
+   INTEGER :: istat, comm_world, shar_comm, comm_master
+   INTEGER :: shar_rank, master_rank
+   LOGICAL :: lismaster, lverb, ldebug
+
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
-   DOUBLE PRECISION, DIMENSION(:), allocatable :: Bx, By, Bz
-   DOUBLE PRECISION, DIMENSION(:), allocatable :: Bx_local, By_local, Bz_local
    INTEGER :: i_int, nn
-   DOUBLE PRECISION :: dist
+   DOUBLE PRECISION :: Bx, By, Bz
    INTEGER :: start, finish, rate
 
    integer, parameter :: arg_len = 256
@@ -24,118 +25,88 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER*(arg_len) :: arg1
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
 
-   INTEGER :: istat, mysize, rank, comm
-   INTEGER :: mystart, myend
-   LOGICAL :: lcomm
-
-   rank = 0
-
-    !-----------------------------------------------------------------------
-    !     Handle Input Arguments
-    !-----------------------------------------------------------------------
-    numargs = 0
-    i = 0
-    arg1 = ''
-    nn = -1
-    dist = -1
-
-    ! First Handle the input arguments
-    CALL GETCARG(1, arg1, numargs)
-    ALLOCATE(args(numargs))
-    ! Cycle through Arguments
-    i = 1
-    DO WHILE (i <= numargs)
-       call GETCARG(i, args(i), numargs)
-       select case (args(i))
-          case ("-mumat")
-                i = i + 1
-                CALL GETCARG(i, filename, numargs)
-          case ("-nearest")
-                i = i + 1
-                CALL GETCARG(i, nearest,  numargs)
-		          read (nearest, '(I10)') nn
-          case ("-distance")
-                i = i + 1
-                CALL GETCARG(i, distance, numargs)
-                read (distance, '(F10.0)') dist
-          case ("-grid")
-                i = i + 1
-                CALL GETCARG(i, grid, numargs)
-
-       END SELECT
-       i = i + 1
-    END DO
-    DEALLOCATE(args)
+   shar_rank = 0
+   master_rank = 0
+   lismaster = .FALSE.
+   !-----------------------------------------------------------------------
+   !     Handle Input Arguments
+   !-----------------------------------------------------------------------
+   numargs = 0
+   i = 0
+   arg1 = ''
+   nn=-1
+   ! First Handle the input arguments
+   CALL GETCARG(1, arg1, numargs)
+   ALLOCATE(args(numargs))
+   ! Cycle through Arguments
+   i = 1
+   DO WHILE (i <= numargs)
+      call GETCARG(i, args(i), numargs)
+      select case (args(i))
+         case ("-mumat")
+            i = i + 1
+            CALL GETCARG(i, filename, numargs)
+         case ("-nearest")
+            i = i + 1
+            CALL GETCARG(i, nearest, numargs)
+            read (nearest, '(I10)') nn
+      END SELECT
+      i = i + 1
+   END DO
+   DEALLOCATE(args)
 
    CALL MPI_INIT(istat)
-   comm = MPI_COMM_WORLD; lcomm = .TRUE.
-   CALL MPI_COMM_SIZE(comm, mysize, istat)
-   CALL MPI_COMM_RANK(comm, rank, istat)
-   
-   CALL MUMATERIAL_SETVERB(.FALSE.)
-   IF (rank .eq. 0) WRITE(6,*) 'Reading grid'
-   CALL read_grid(grid, x, y, z, istat)
-   n_points = size(x)
-   IF (rank .eq. 0) WRITE(6,'(A,I12)') 'Grid read, size ', n_points
-
-   IF (rank .eq. 0) THEN
-      CALL SYSTEM_CLOCK(count_rate=rate)
-      CALL SYSTEM_CLOCK(start)
-      CALL MUMATERIAL_SETVERB(.TRUE.)
+   comm_world = MPI_COMM_WORLD
+   CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master, istat)
+   CALL MPI_COMM_RANK( shar_comm, shar_rank, istat)
+   IF (shar_rank.EQ.0) THEN
+        CALL MPI_COMM_RANK( comm_master, master_rank, istat)
+        IF (master_rank.EQ.0) lismaster = .TRUE.
+   END IF
+   IF (lismaster) THEN 
+    lverb = .TRUE.
+    ldebug = .FALSE.
+   ELSE 
+    lverb = .FALSE.
+    ldebug = .FALSE.
    END IF
 
+   CALL MUMATERIAL_SETVERB(lverb)
+   CALL MUMATERIAL_DEBUG(ldebug)
+   IF (lismaster) THEN
+      CALL SYSTEM_CLOCK(count_rate=rate)
+      CALL SYSTEM_CLOCK(start)
+   END IF
 
    allocate(offset(3))
    offset = [0.0, 0.0, 0.0]
 
-   CALL MUMATERIAL_LOAD(TRIM(filename),istat, comm)
-   ! if (istat/=0) EXIT(2) ! probably need to stop the program in this case?
+   CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master)
+   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
 
-   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, dist, comm) ! only set if values need to be changed
-   IF (lcomm) CALL MPI_BARRIER(comm, istat)
+   IF (lismaster) CALL MUMATERIAL_INFO(6)
+   CALL MPI_BARRIER(comm_world, istat)
+   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm_world, shar_comm, comm_master, offset)
 
-   IF (rank .eq. 0) THEN
-      CALL MUMATERIAL_INFO(6)
-   END IF
-   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm, offset)
-
-   IF (rank .eq. 0) THEN
+   IF (lismaster) THEN
       CALL SYSTEM_CLOCK(finish)
       WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
-
-      OPEN(27, file='./time.dat')
-      WRITE(27,"(E15.7)") real(finish-start)/real(rate)
-      CLOSE(27)
-   END IF
-   
-   IF (rank .eq. 0) WRITE(6,*) 'Calculating B-field'
-   CALL mumaterial_getb_vector(x, y, z, Bx, By, Bz, BEXTERNAL, comm)
-
-   IF (rank .eq. 0) THEN
-      CALL SYSTEM_CLOCK(finish)
-      WRITE(*,*) "Time to finish B-field calculations: ", real(finish-start)/real(rate)
-   END IF
-
-   IF (rank .eq. 0) THEN
-      WRITE(6,*) "Outputting B-field"
-      OPEN(14, file='./B.dat')
-      DO i = 1, n_points
-            WRITE(14, "(E15.7,A,E15.7,A,E15.7)") Bx(i), ',', By(i), ',', Bz(i)
-      END DO
+      
+      OPEN(14, file='./time.dat')
+      WRITE(14,"(E15.7)") real(finish-start)/real(rate)
       CLOSE(14)
    END IF
+   
+   CALL gen_grid(x, y, z)
 
    ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
    ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
-
-   !CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm)
-
-
-
+   
+   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm_world, shar_comm, comm_master)
 
    CALL MUMATERIAL_FREE()
 
-   IF (rank .eq. 0) THEN
+   IF (lismaster) THEN
       CALL SYSTEM_CLOCK(finish)
       WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
    END IF
@@ -163,27 +134,58 @@ PROGRAM MUMATERIAL_TEST
       RETURN
    END SUBROUTINE BEXTERNAL
 
-   subroutine read_grid(gridfile,x,y,z,istat)
+   subroutine gen_grid(x,y,z)
+
       IMPLICIT NONE
-      CHARACTER(LEN=*), INTENT(in) :: gridfile
       DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
-      INTEGER, INTENT(inout) :: istat
-      INTEGER :: iunit, lines, il
+      integer, dimension(3) :: num_points
+      integer :: n_temp, i, j, k, n_points
+      DOUBLE PRECISION :: r, theta, phi, pi
+      DOUBLE PRECISION, dimension(3) :: min, max
 
-      iunit = 380; istat = 0; lines = 0
-      CALL safe_open(iunit,istat,TRIM(gridfile),'old','formatted')
-      IF (istat /= 0) RETURN
+      pi = 4.0 * atan(1.0)
+      
+      min = [500.0, 0.0, 0.0]
+      max = [750.d0, pi, 2.0*pi]
+      num_points = [251, 51, 1]
+      
+      n_temp = 1
+      n_points = num_points(1)*num_points(2)*num_points(3)
+      allocate(x(n_points))
+      allocate(y(n_points))
+      allocate(z(n_points))
 
-      READ(iunit,*) lines
-
-      allocate(x(lines))
-      allocate(y(lines))
-      allocate(z(lines))
-
-      DO il = 1, lines
-         READ(iunit,*) x(il),y(il),z(il)
-      END DO
-
-   end subroutine read_grid
+      do i = 1, num_points(1)
+         do j = 1, num_points(2)
+               do k = 1, num_points(3)
+                  if (num_points(1) .gt. 1) then
+                     r = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                     x(n_temp) = min(1) + 1.0*(i-1)*(max(1)-min(1))/(num_points(1)-1)
+                  else
+                     r = min(1)
+                     x(n_temp) = min(1)
+                  end if
+                  if (num_points(2) .gt. 1) then
+                     theta = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
+                     y(n_temp) = min(2) + 1.0*(j-1)*(max(2)-min(2))/(num_points(2)-1)
+                  else
+                     theta = min(2)
+                     y(n_temp) = min(2)
+                  end if
+                  if (num_points(3) .gt. 1) then
+                     phi = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3))
+                     z(n_temp) = min(3) + 1.0*(k-1)*(max(3)-min(3))/(num_points(3)-1)
+                  else
+                     phi = min(3)
+                     z(n_temp) = min(3)
+                  end if
+                  x(n_temp) = r*sin(theta)*cos(phi)
+                  y(n_temp) = r*sin(theta)*sin(phi)
+                  z(n_temp) = r*cos(theta)
+                  n_temp = n_temp + 1
+               enddo
+         enddo
+      enddo
+   end subroutine gen_grid
 
 END PROGRAM MUMATERIAL_TEST
