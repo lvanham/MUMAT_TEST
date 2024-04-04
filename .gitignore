@@ -5,4 +5,10 @@ xmumat_test
 output.*
 error.*
 *.o
+x*
+log.txt
+B.dat
+*.sh
+*.m
+*/*
 *.asv
