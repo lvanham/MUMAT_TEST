@@ -80,7 +80,7 @@ PROGRAM MUMATERIAL_TEST
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master)
-   CALL MUMATERIAL_SETD(1.0d-5, 100, 0.7d0, 0.75d0, nn) 
+   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
    CALL MPI_BARRIER(comm_world, istat)
