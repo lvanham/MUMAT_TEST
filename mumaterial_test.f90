@@ -6,10 +6,11 @@ PROGRAM MUMATERIAL_TEST
 
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: nearest
+   CHARACTER(LEN=256) :: fsample
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
-   LOGICAL :: lismaster, lverb, ldebug
+   LOGICAL :: lismaster, lverb, ldebug, lsample
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
@@ -19,7 +20,7 @@ PROGRAM MUMATERIAL_TEST
 
    integer, parameter :: arg_len = 256
 
-   INTEGER :: i, numargs
+   INTEGER :: i, numargs, isample
    CHARACTER*(arg_len) :: arg1
    CHARACTER*(arg_len), allocatable, dimension(:) :: args
 
@@ -33,6 +34,8 @@ PROGRAM MUMATERIAL_TEST
    i = 0
    arg1 = ''
    nn=-1
+   isample = 0
+   lsample = .FALSE.
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
    ALLOCATE(args(numargs))
@@ -48,6 +51,12 @@ PROGRAM MUMATERIAL_TEST
             i = i + 1
             CALL GETCARG(i, nearest, numargs)
             read (nearest, '(I10)') nn
+         case ("-random")
+            i = i + 1
+            CALL GETCARG(i, fsample, numargs)
+            READ (fsample, '(I3)') isample
+            IF (isample.EQ.1) lsample = .TRUE.
+            
       END SELECT
       i = i + 1
    END DO
@@ -80,7 +89,7 @@ PROGRAM MUMATERIAL_TEST
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master)
-   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
+   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn, lsample) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
    CALL MPI_BARRIER(comm_world, istat)
