@@ -57,16 +57,13 @@ PROGRAM MUMATERIAL_TEST
    comm_world = MPI_COMM_WORLD
    CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master, istat)
    CALL MPI_COMM_RANK( shar_comm, shar_rank, istat)
+   ldebug = .FALSE.
+   lverb  = .FALSE.
    IF (shar_rank.EQ.0) THEN
         CALL MPI_COMM_RANK( comm_master, master_rank, istat)
         IF (master_rank.EQ.0) lismaster = .TRUE.
-   END IF
-   IF (lismaster) THEN 
-    lverb = .TRUE.
-    ldebug = .FALSE.
-   ELSE 
-    lverb = .FALSE.
-    ldebug = .FALSE.
+	ldebug = .TRUE.
+	lverb = lismaster
    END IF
 
    CALL MUMATERIAL_SETVERB(lverb)
