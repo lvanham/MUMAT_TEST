@@ -9,7 +9,7 @@ PROGRAM MUMATERIAL_TEST
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
-   LOGICAL :: lismaster, lverb, ldebug
+   LOGICAL :: lismaster, ldebug
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
@@ -57,17 +57,14 @@ PROGRAM MUMATERIAL_TEST
    comm_world = MPI_COMM_WORLD
    CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master, istat)
    CALL MPI_COMM_RANK( shar_comm, shar_rank, istat)
-   ldebug = .FALSE.
-   lverb  = .FALSE.
+   ldebug = (shar_rank.EQ.0)
    IF (shar_rank.EQ.0) THEN
-        CALL MPI_COMM_RANK( comm_master, master_rank, istat)
-        IF (master_rank.EQ.0) lismaster = .TRUE.
-	ldebug = .TRUE.
-	lverb = lismaster
+      CALL MPI_COMM_RANK( comm_master, master_rank, istat)
+      lismaster = (master_rank.EQ.0)
    END IF
 
-   CALL MUMATERIAL_SETVERB(lverb)
-   CALL MUMATERIAL_DEBUG(ldebug)
+   CALL MUMATERIAL_SETVERB(lismaster)
+   CALL MUMATERIAL_DEBUG(lismaster)
    IF (lismaster) THEN
       CALL SYSTEM_CLOCK(count_rate=rate)
       CALL SYSTEM_CLOCK(start)
@@ -76,7 +73,7 @@ PROGRAM MUMATERIAL_TEST
    allocate(offset(3))
    offset = [0.0, 0.0, 0.0]
 
-   CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master)
+   CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
    CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
