@@ -5,7 +5,8 @@ PROGRAM MUMATERIAL_TEST
 
 
    CHARACTER(LEN=256) :: filename
-   CHARACTER(LEN=256) :: nearest
+   CHARACTER(LEN=256) :: padding
+   CHARACTER(LEN=256) :: syncinterval
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
@@ -13,8 +14,8 @@ PROGRAM MUMATERIAL_TEST
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
-   INTEGER :: i_int, nn
-   DOUBLE PRECISION :: Bx, By, Bz
+   INTEGER :: i_int, syncint
+   DOUBLE PRECISION :: Bx, By, Bz, pad
    INTEGER :: start, finish, rate
 
    integer, parameter :: arg_len = 256
@@ -32,7 +33,9 @@ PROGRAM MUMATERIAL_TEST
    numargs = 0
    i = 0
    arg1 = ''
-   nn=-1
+   pad = 1
+   syncint = 10
+
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
    ALLOCATE(args(numargs))
@@ -44,10 +47,14 @@ PROGRAM MUMATERIAL_TEST
          case ("-mumat")
             i = i + 1
             CALL GETCARG(i, filename, numargs)
-         case ("-nearest")
+          case ("-padding")
             i = i + 1
-            CALL GETCARG(i, nearest, numargs)
-            read (nearest, '(I10)') nn
+            CALL GETCARG(i, padding, numargs)
+            read (padding, '(F15.0)') pad
+          case ("-syncinterval")
+            i = i + 1
+            CALL GETCARG(i, syncinterval, numargs)
+            read (syncinterval, '(I10)') syncint
       END SELECT
       i = i + 1
    END DO
@@ -64,7 +71,7 @@ PROGRAM MUMATERIAL_TEST
    END IF
 
    CALL MUMATERIAL_SETVERB(lismaster)
-   CALL MUMATERIAL_DEBUG(lismaster)
+   CALL MUMATERIAL_DEBUG(ldebug)
    IF (lismaster) THEN
       CALL SYSTEM_CLOCK(count_rate=rate)
       CALL SYSTEM_CLOCK(start)
@@ -74,7 +81,7 @@ PROGRAM MUMATERIAL_TEST
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
-   CALL MUMATERIAL_SETD(1.0d-5, 1000, 0.7d0, 0.75d0, nn) 
+   CALL MUMATERIAL_SETD(1.0d-2, 1000, 0.7d0, 0.75d0, 6, pad, syncint) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
    CALL MPI_BARRIER(comm_world, istat)
@@ -90,9 +97,6 @@ PROGRAM MUMATERIAL_TEST
    END IF
    
    CALL gen_grid(x, y, z)
-
-   ! CALL MUMATERIAL_GETB(5.d0, 5.d0, 501.d0, Bx, By, Bz, BEXTERNAL)
-   ! WRITE(*,*) "H:", Bx / (16 * atan(1.d0) * 1.d-7), By / (16 * atan(1.d0) * 1.d-7), Bz / (16 * atan(1.d0) * 1.d-7)
    
    CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm_world, shar_comm, comm_master)
 
@@ -136,9 +140,9 @@ PROGRAM MUMATERIAL_TEST
 
       pi = 4.0 * atan(1.0)
       
-      min = [500.0, 0.0, 0.0]
-      max = [750.d0, pi, 2.0*pi]
-      num_points = [251, 51, 1]
+      min = [0.12, 0.0, 0.0]
+      max = [1.d0, pi, 2.0*pi]
+      num_points = [881, 51, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
