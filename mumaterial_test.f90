@@ -5,7 +5,7 @@ PROGRAM MUMATERIAL_TEST
 
 
    CHARACTER(LEN=256) :: filename
-   CHARACTER(LEN=256) :: padding
+   CHARACTER(LEN=256) :: padfactor
    CHARACTER(LEN=256) :: syncinterval
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
@@ -33,7 +33,7 @@ PROGRAM MUMATERIAL_TEST
    numargs = 0
    i = 0
    arg1 = ''
-   pad = 1
+   pad = 1.0
    syncint = 10
 
    ! First Handle the input arguments
@@ -47,10 +47,10 @@ PROGRAM MUMATERIAL_TEST
          case ("-mumat")
             i = i + 1
             CALL GETCARG(i, filename, numargs)
-          case ("-padding")
+          case ("-padfactor")
             i = i + 1
-            CALL GETCARG(i, padding, numargs)
-            read (padding, '(F15.0)') pad
+            CALL GETCARG(i, padfactor, numargs)
+            read (padfactor, '(F15.0)') pad
           case ("-syncinterval")
             i = i + 1
             CALL GETCARG(i, syncinterval, numargs)
@@ -71,19 +71,21 @@ PROGRAM MUMATERIAL_TEST
    END IF
 
    CALL MUMATERIAL_SETVERB(lismaster)
-   CALL MUMATERIAL_DEBUG(ldebug)
-   IF (lismaster) THEN
-      CALL SYSTEM_CLOCK(count_rate=rate)
-      CALL SYSTEM_CLOCK(start)
-   END IF
+   CALL MUMATERIAL_DEBUG(lismaster,ldebug,.TRUE.)
+
 
    allocate(offset(3))
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
-   CALL MUMATERIAL_SETD(1.0d-2, 1000, 0.7d0, 0.75d0, 6, pad, syncint) 
+   CALL MUMATERIAL_SETD(1.0d-2, 10000, 0.7d0, 0.95d0, 10, pad, syncint) 
 
-   IF (lismaster) CALL MUMATERIAL_INFO(6)
+   IF (lismaster) THEN
+    CALL MUMATERIAL_INFO(6)
+    CALL SYSTEM_CLOCK(count_rate=rate)
+    CALL SYSTEM_CLOCK(start)
+   END IF
+
    CALL MPI_BARRIER(comm_world, istat)
    CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm_world, shar_comm, comm_master, offset)
 
@@ -140,9 +142,9 @@ PROGRAM MUMATERIAL_TEST
 
       pi = 4.0 * atan(1.0)
       
-      min = [0.12, 0.0, 0.0]
-      max = [1.d0, pi, 2.0*pi]
-      num_points = [881, 51, 1]
+      min = [0.d0, 0.d0, 0.d0]
+      max = [0.5d0, pi, 2.0*pi]
+      num_points = [501, 51, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
