@@ -6,7 +6,7 @@ PROGRAM MUMATERIAL_TEST
 
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: padding
-   CHARACTER(LEN=256) :: syncinterval
+   CHARACTER(LEN=256) :: lambdastart
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
@@ -14,8 +14,8 @@ PROGRAM MUMATERIAL_TEST
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
-   INTEGER :: i_int, syncint
-   DOUBLE PRECISION :: Bx, By, Bz, pad
+   INTEGER :: i_int
+   DOUBLE PRECISION :: Bx, By, Bz, pad, lambdaS
    INTEGER :: start, finish, rate
 
    integer, parameter :: arg_len = 256
@@ -33,8 +33,8 @@ PROGRAM MUMATERIAL_TEST
    numargs = 0
    i = 0
    arg1 = ''
-   pad = 1
-   syncint = 10
+   pad = 1.0
+   lambdaS = 0.7
 
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
@@ -47,14 +47,14 @@ PROGRAM MUMATERIAL_TEST
          case ("-mumat")
             i = i + 1
             CALL GETCARG(i, filename, numargs)
-          case ("-padding")
+          case ("-padfactor")
             i = i + 1
             CALL GETCARG(i, padding, numargs)
             read (padding, '(F15.0)') pad
-          case ("-syncinterval")
+          case ("-lambdastart")
             i = i + 1
-            CALL GETCARG(i, syncinterval, numargs)
-            read (syncinterval, '(I10)') syncint
+            CALL GETCARG(i, lambdastart, numargs)
+            read (lambdastart, '(F15.0)') lambdaS
       END SELECT
       i = i + 1
    END DO
@@ -71,20 +71,22 @@ PROGRAM MUMATERIAL_TEST
    END IF
 
    CALL MUMATERIAL_SETVERB(lismaster)
-   CALL MUMATERIAL_DEBUG(ldebug)
+   CALL MUMATERIAL_DEBUG(lismaster, ldebug, .TRUE.)
+ 
+   allocate(offset(3))
+   offset = [0.0, 0.0, 0.0]
+
+   CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
+   CALL MUMATERIAL_SETD(1.0d-3, 10000, lambdaS, 0.75d0, 10, pad) 
+
+   IF (lismaster) CALL MUMATERIAL_INFO(6)
+   CALL MPI_BARRIER(comm_world, istat)
+
    IF (lismaster) THEN
       CALL SYSTEM_CLOCK(count_rate=rate)
       CALL SYSTEM_CLOCK(start)
    END IF
 
-   allocate(offset(3))
-   offset = [0.0, 0.0, 0.0]
-
-   CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
-   CALL MUMATERIAL_SETD(1.0d-2, 1000, 0.7d0, 0.75d0, 6, pad, syncint) 
-
-   IF (lismaster) CALL MUMATERIAL_INFO(6)
-   CALL MPI_BARRIER(comm_world, istat)
    CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm_world, shar_comm, comm_master, offset)
 
    IF (lismaster) THEN
@@ -140,9 +142,9 @@ PROGRAM MUMATERIAL_TEST
 
       pi = 4.0 * atan(1.0)
       
-      min = [0.12, 0.0, 0.0]
-      max = [1.d0, pi, 2.0*pi]
-      num_points = [881, 51, 1]
+      min = [0.d0, 0.0, 0.0]
+      max = [0.5d0, pi, 2.0*pi]
+      num_points = [501, 51, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
