@@ -177,7 +177,7 @@ PROGRAM MUMATERIAL_TEST
       ohpointfive = 0.5
 
       min = [0.0, 0.0, 0.0]
-      max = [1.633, pi, 2.0*pi]
+      max = [1.633d0, pi, 2.0*pi]
       num_points = [1634, 5, 1]
       
       n_temp = 1
