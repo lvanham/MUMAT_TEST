@@ -7,6 +7,14 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER(LEN=256) :: filename
    CHARACTER(LEN=256) :: padding
    CHARACTER(LEN=256) :: lambdastart
+   CHARACTER(LEN=256) :: lambdafactor
+   CHARACTER(LEN=256) :: lambdacount
+   CHARACTER(LEN=256) :: maxerror
+   CHARACTER(LEN=256) :: maxiter
+
+
+   DOUBLE PRECISION :: pad, lambdaS, lambdaF, maxerr
+   INTEGER :: lambdaC, maxi
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
@@ -15,7 +23,7 @@ PROGRAM MUMATERIAL_TEST
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
    INTEGER :: i_int
-   DOUBLE PRECISION :: Bx, By, Bz, pad, lambdaS
+   DOUBLE PRECISION :: Bx, By, Bz
    INTEGER :: start, finish, rate
 
    integer, parameter :: arg_len = 256
@@ -34,7 +42,11 @@ PROGRAM MUMATERIAL_TEST
    i = 0
    arg1 = ''
    pad = 1.0
-   lambdaS = 0.7
+   lambdaS = 0.9
+   lambdaF = 0.99
+   lambdaC = 9
+   maxerr = 9.9d-3
+   maxi = 999
 
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
@@ -55,6 +67,22 @@ PROGRAM MUMATERIAL_TEST
             i = i + 1
             CALL GETCARG(i, lambdastart, numargs)
             read (lambdastart, '(F15.0)') lambdaS
+          case ("-lambdafactor")
+            i = i + 1
+            CALL GETCARG(i, lambdafactor, numargs)
+            read (lambdafactor, '(F15.0)') lambdaF
+          case ("-lambdacount")
+            i = i + 1
+            CALL GETCARG(i, lambdacount, numargs)
+            read (lambdacount, '(I7)') lambdaC
+          case ("-maxerror")
+            i = i + 1
+            CALL GETCARG(i, maxerror, numargs)
+            read (maxerror, '(F15.0)') maxerr
+          case ("-maxiter")
+            i = i + 1
+            CALL GETCARG(i, maxiter, numargs)
+            read (maxiter, '(I7)') maxi
       END SELECT
       i = i + 1
    END DO
@@ -62,7 +90,7 @@ PROGRAM MUMATERIAL_TEST
 
    CALL MPI_INIT(istat)
    comm_world = MPI_COMM_WORLD
-   CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master, istat)
+   CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master)
    CALL MPI_COMM_RANK( shar_comm, shar_rank, istat)
    ldebug = (shar_rank.EQ.0)
    IF (shar_rank.EQ.0) THEN
@@ -77,7 +105,7 @@ PROGRAM MUMATERIAL_TEST
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
-   CALL MUMATERIAL_SETD(1.0d-3, 10000, lambdaS, 0.75d0, 10, pad) 
+   CALL MUMATERIAL_SETD(maxerr, maxi, lambdaS, lambdaF, LambdaC, pad) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
    CALL MPI_BARRIER(comm_world, istat)
@@ -87,7 +115,7 @@ PROGRAM MUMATERIAL_TEST
       CALL SYSTEM_CLOCK(start)
    END IF
 
-   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, comm_world, shar_comm, comm_master, offset)
+   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, offset)
 
    IF (lismaster) THEN
       CALL SYSTEM_CLOCK(finish)
@@ -100,7 +128,7 @@ PROGRAM MUMATERIAL_TEST
    
    CALL gen_grid(x, y, z)
    
-   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, comm_world, shar_comm, comm_master)
+   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL)
 
    CALL MUMATERIAL_FREE()
 
@@ -137,13 +165,14 @@ PROGRAM MUMATERIAL_TEST
       DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
       integer, dimension(3) :: num_points
       integer :: n_temp, i, j, k, n_points
-      DOUBLE PRECISION :: r, theta, phi, pi
+      DOUBLE PRECISION :: r, theta, phi, pi, ohpointfive
       DOUBLE PRECISION, dimension(3) :: min, max
 
       pi = 4.0 * atan(1.0)
-      
-      min = [0.d0, 0.0, 0.0]
-      max = [0.5d0, pi, 2.0*pi]
+      ohpointfive = 0.5
+
+      min = [0.0, 0.0, 0.0]
+      max = [ohpointfive, pi, 2.0*pi]
       num_points = [501, 51, 1]
       
       n_temp = 1
