@@ -1,0 +1,54 @@
+#!/bin/bash
+#SBATCH -J N64P20
+#SBATCH --mail-user=lucas.van.ham@ipp.mpg.de
+#SBATCH -p regular
+#SBATCH --nodes=64
+#SBATCH --ntasks-per-node=72
+#SBATCH -t 00:10:00
+#SBATCH -o o.%j.%x
+#SBATCH -e e.%j.%x
+
+#OpenMP settings:
+export OMP_NUM_THREADS=1
+export OMP_PLACES=threads
+export OMP_PROC_BIND=spread
+
+#HDF5 settings (for projects)
+export HDF5_USE_FILE_LOCKING=FALSE
+
+#RUN settings
+export TET=18221
+export PAD=20
+export MUMAT=~/src/MUMAT_TEST/hollow_sphere_mu_"$TET".dat
+export PADFACTOR=20.0
+export LAMBDASTART=0.1
+export LAMBDAFACTOR=0.75
+export LAMBDACOUNT=5
+export MAXERROR=0.001
+export MAXITER=10000
+
+#Create Directory
+cd $SLURM_SUBMIT_DIR
+export WORKDIR=/ptmp/lucv 
+export JOBDIR=$SLURM_JOB_NAME.$SLURM_JOB_ID
+mkdir $WORKDIR/$JOBDIR
+cd $WORKDIR/$JOBDIR
+
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "Temp Dir is: " $WORKDIR/$JOBDIR
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+#run the application:
+echo "srun -mumat $MUMAT -padfactor $PADFACTOR -lambdastart $LAMBDASTART -lambdafactor $LAMBDAFACTOR -lambdacount $LAMBDACOUNT -maxerror $MAXERROR -maxiter $MAXITER"
+srun -mumat $MUMAT -padfactor $PADFACTOR -lambdastart $LAMBDASTART -lambdafactor $LAMBDAFACTOR -lambdacount $LAMBDACOUNT -maxerror $MAXERROR -maxiter $MAXITER
+
+# Now CLEANUP
+echo " "
+echo " "
+echo "  Copying files:"
+echo "     From: " $WORKDIR/$JOBDIR
+echo "     To:   " $SLURM_SUBMIT_DIR
+cp $WORKDIR/$JOBDIR/B.dat $SLURM_SUBMIT_DIR/results/B"$TET"_P"$PAD".dat
+cp $WORKDIR/$JOBDIR/time.dat $SLURM_SUBMIT_DIR/results/T"$TET"_P"$PAD".dat
+echo " "
+echo " "

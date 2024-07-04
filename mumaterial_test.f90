@@ -22,7 +22,7 @@ PROGRAM MUMATERIAL_TEST
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
-   INTEGER :: i_int
+   INTEGER :: i_int, nearest
    DOUBLE PRECISION :: Bx, By, Bz
    INTEGER :: start, finish, rate
 
@@ -35,6 +35,7 @@ PROGRAM MUMATERIAL_TEST
    shar_rank = 0
    master_rank = 0
    lismaster = .FALSE.
+
    !-----------------------------------------------------------------------
    !     Handle Input Arguments
    !-----------------------------------------------------------------------
@@ -48,6 +49,7 @@ PROGRAM MUMATERIAL_TEST
    maxerr = 9.9d-3
    maxi = 999
 
+    nearest = -1 ! Default to all tetrahedrons 
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
    ALLOCATE(args(numargs))
@@ -83,6 +85,9 @@ PROGRAM MUMATERIAL_TEST
             i = i + 1
             CALL GETCARG(i, maxiter, numargs)
             read (maxiter, '(I7)') maxi
+          case ("-nearest")
+                i = i + 1
+                CALL GETCARG(i, nearest,  numargs)
       END SELECT
       i = i + 1
    END DO
