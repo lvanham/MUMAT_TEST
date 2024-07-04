@@ -128,7 +128,7 @@ PROGRAM MUMATERIAL_TEST
    
    CALL gen_grid(x, y, z)
    
-   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL)
+   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL, .TRUE.)
 
    CALL MUMATERIAL_FREE()
 
