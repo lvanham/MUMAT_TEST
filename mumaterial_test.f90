@@ -165,15 +165,17 @@ PROGRAM MUMATERIAL_TEST
       DOUBLE PRECISION, dimension(:), allocatable, intent(out) :: x, y, z
       integer, dimension(3) :: num_points
       integer :: n_temp, i, j, k, n_points
-      DOUBLE PRECISION :: r, theta, phi, pi, ohpointfive
+      DOUBLE PRECISION :: r, theta, phi, pi, ohpointfive, onepointfive, two
       DOUBLE PRECISION, dimension(3) :: min, max
 
       pi = 4.0 * atan(1.0)
       ohpointfive = 0.5
+      onepointfive = 1.5
+      two = 2.0
 
       min = [0.0, 0.0, 0.0]
-      max = [ohpointfive, pi, 2.0*pi]
-      num_points = [501, 51, 1]
+      max = [two, pi, 2.0*pi]
+      num_points = [2001, 101, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
