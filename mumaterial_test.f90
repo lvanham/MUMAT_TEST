@@ -11,9 +11,10 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER(LEN=256) :: lambdacount
    CHARACTER(LEN=256) :: maxerror
    CHARACTER(LEN=256) :: maxiter
+   CHARACTER(LEN=256) :: convcheck
 
 
-   DOUBLE PRECISION :: pad, lambdaS, lambdaF, maxerr
+   DOUBLE PRECISION :: pad, lambdaS, lambdaF, maxerr, cc
    INTEGER :: lambdaC, maxi
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
@@ -47,6 +48,7 @@ PROGRAM MUMATERIAL_TEST
    lambdaC = 9
    maxerr = 9.9d-3
    maxi = 999
+   cc = 99.9
 
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
@@ -83,6 +85,10 @@ PROGRAM MUMATERIAL_TEST
             i = i + 1
             CALL GETCARG(i, maxiter, numargs)
             read (maxiter, '(I7)') maxi
+         case ("-convcheck")
+            i = i + 1
+            CALL GETCARG(i, convcheck, numargs)
+            read (convcheck, '(F15.0)') cc
       END SELECT
       i = i + 1
    END DO
@@ -105,7 +111,7 @@ PROGRAM MUMATERIAL_TEST
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
-   CALL MUMATERIAL_SETD(maxerr, maxi, lambdaS, lambdaF, LambdaC, pad) 
+   CALL MUMATERIAL_SETD(maxerr, maxi, lambdaS, lambdaF, LambdaC, pad, convcheck) 
 
    IF (lismaster) CALL MUMATERIAL_INFO(6)
    CALL MPI_BARRIER(comm_world, istat)
