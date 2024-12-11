@@ -180,8 +180,8 @@ PROGRAM MUMATERIAL_TEST
       two = 2.0
 
       min = [0.0, 0.0, 0.0]
-      max = [two, pi, 2.0*pi]
-      num_points = [2001, 101, 1]
+      max = [two, 2*pi, 2.0*pi]
+      num_points = [2001, 361, 1]
       
       n_temp = 1
       n_points = num_points(1)*num_points(2)*num_points(3)
