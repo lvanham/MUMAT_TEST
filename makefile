@@ -11,7 +11,7 @@ ifeq ($(MACHINE),macports)
 endif
 
 #Intel Raven/Cobra
-ifeq ($(MACHINE),$(filter $(MACHINE),cobra raven))
+ifeq ($(MACHINE),$(filter $(MACHINE),cobra raven viper))
 	FC = mpiifort
 	COMP_OPT = -I${MKLROOT}/include/intel64/lp64 -I$(MKL_HOME)/include \
             -O2 -traceback -assume noold_unit_star \
@@ -29,6 +29,8 @@ ifeq ($(MACHINE),$(filter $(MACHINE),cobra raven))
 		MPI_RUN_OPTS = --nodes=1 --ntasks-per-node=72 --time=0:30:00 -p express
 	else ifeq ($(MACHINE),cobra)
 		MPI_RUN_OPTS = --nodes=1 --ntasks-per-node=40 --time=0:30:00 -p express
+	else ifeq ($(MACHINE),viper)
+		MPI_RUN_OPTS = --nodes=1 --ntasks-per-node=128 --time=0:30:00 -p express
 	endif
 endif
 
