@@ -12,6 +12,7 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER(LEN=256) :: maxerror
    CHARACTER(LEN=256) :: maxiter
    CHARACTER(LEN=256) :: convcheck
+   CHARACTER(LEN=256) :: Mfile
 
 
    DOUBLE PRECISION :: pad, lambdaS, lambdaF, maxerr, cc
@@ -19,7 +20,7 @@ PROGRAM MUMATERIAL_TEST
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
-   LOGICAL :: lismaster, ldebug
+   LOGICAL :: lismaster, ldebug, lhasMfile
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
@@ -49,6 +50,7 @@ PROGRAM MUMATERIAL_TEST
    maxerr = 9.9d-3
    maxi = 999
    cc = 99.9
+   lhasMfile = .FALSE.
 
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
@@ -89,6 +91,10 @@ PROGRAM MUMATERIAL_TEST
             i = i + 1
             CALL GETCARG(i, convcheck, numargs)
             read (convcheck, '(F15.0)') cc
+         ! case ("-M")
+         !    i = i + 1
+         !    CALL GETCARG(i, Mfile, numargs)
+         !    lhasMfile = .TRUE.
       END SELECT
       i = i + 1
    END DO
@@ -105,7 +111,7 @@ PROGRAM MUMATERIAL_TEST
    END IF
 
    CALL MUMATERIAL_SETVERB(lismaster)
-   CALL MUMATERIAL_DEBUG(lismaster, ldebug, .TRUE.)
+   CALL MUMATERIAL_DEBUG(.FALSE.,.FALSE.,.FALSE.)
  
    allocate(offset(3))
    offset = [0.0, 0.0, 0.0]

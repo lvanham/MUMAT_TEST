@@ -15,7 +15,7 @@ ifeq ($(MACHINE),$(filter $(MACHINE),cobra raven viper))
 	FC = mpiifort
 	COMP_OPT = -I${MKLROOT}/include/intel64/lp64 -I$(MKL_HOME)/include \
             -O2 -traceback -assume noold_unit_star \
-            -xCORE-AVX512 -qopt-zmm-usage=high -fp-model strict -ip
+            -march=skylake-avx512-qopt-zmm-usage=high -fp-model strict -ip
 	LIBS = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a \
              ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a \
              ${MKLROOT}/lib/intel64/libmkl_scalapack_lp64.a \
