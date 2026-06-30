@@ -1,7 +1,7 @@
 PROGRAM MUMATERIAL_TEST
    USE MUMATERIAL_MOD
    IMPLICIT NONE
-   INCLUDE "mpif.h"
+   INCLUDE 'mpif.h'
 
 
    CHARACTER(LEN=256) :: filename
@@ -13,14 +13,17 @@ PROGRAM MUMATERIAL_TEST
    CHARACTER(LEN=256) :: maxiter
    CHARACTER(LEN=256) :: convcheck
    CHARACTER(LEN=256) :: Mfile
+   CHARACTER(LEN=256) :: tree_depth
+   CHARACTER(LEN=256) :: tree_leaf
+   CHARACTER(LEN=256) :: tree_theta
 
 
-   DOUBLE PRECISION :: pad, lambdaS, lambdaF, maxerr, cc
-   INTEGER :: lambdaC, maxi
+   DOUBLE PRECISION :: pad, lambdaS, lambdaF, maxerr, cc, theta
+   INTEGER :: lambdaC, maxi, depth, leaf
 
    INTEGER :: istat, comm_world, shar_comm, comm_master
    INTEGER :: shar_rank, master_rank
-   LOGICAL :: lismaster, ldebug, lhasMfile
+   LOGICAL :: lismaster, ldebug, lhasMfile, lnoiter, loutmag
 
 
    DOUBLE PRECISION, DIMENSION(:), allocatable :: x, y, z, Hx, Hy, Hz, offset
@@ -51,6 +54,11 @@ PROGRAM MUMATERIAL_TEST
    maxi = 999
    cc = 99.9
    lhasMfile = .FALSE.
+   lnoiter = .FALSE.
+   loutmag = .FALSE.
+   theta = 0.20d0
+   depth = 30
+   leaf = 4
 
    ! First Handle the input arguments
    CALL GETCARG(1, arg1, numargs)
@@ -91,10 +99,28 @@ PROGRAM MUMATERIAL_TEST
             i = i + 1
             CALL GETCARG(i, convcheck, numargs)
             read (convcheck, '(F15.0)') cc
-         ! case ("-M")
-         !    i = i + 1
-         !    CALL GETCARG(i, Mfile, numargs)
-         !    lhasMfile = .TRUE.
+         case ("-magfile")
+            i = i + 1
+            CALL GETCARG(i, Mfile, numargs)
+            lhasMfile = .TRUE.
+         case ("-theta")
+            i = i + 1
+            CALL GETCARG(i, tree_theta, numargs)
+            read (tree_theta, '(F15.0)') theta
+         case ("-depth")
+            i = i + 1
+            CALL GETCARG(i, tree_depth, numargs)
+            read (tree_depth, '(I7)') depth
+         case ("-leaf")
+            i = i + 1
+            CALL GETCARG(i, tree_leaf, numargs)
+            read (tree_leaf, '(I7)') leaf
+         case ("-noiter")
+            i = i + 1
+            lnoiter = .TRUE.
+         case ("-outmag")
+            i = i + 1
+            loutmag = .TRUE.
       END SELECT
       i = i + 1
    END DO
@@ -102,7 +128,7 @@ PROGRAM MUMATERIAL_TEST
 
    CALL MPI_INIT(istat)
    comm_world = MPI_COMM_WORLD
-   CALL MUMATERIAL_SETUP(comm_world, shar_comm, comm_master)
+   CALL MUMATERIAL_SET_COMMS(comm_world, shar_comm, comm_master)
    CALL MPI_COMM_RANK( shar_comm, shar_rank, istat)
    ldebug = (shar_rank.EQ.0)
    IF (shar_rank.EQ.0) THEN
@@ -111,40 +137,46 @@ PROGRAM MUMATERIAL_TEST
    END IF
 
    CALL MUMATERIAL_SETVERB(lismaster)
-   CALL MUMATERIAL_DEBUG(.FALSE.,.FALSE.,.FALSE.)
  
    allocate(offset(3))
    offset = [0.0, 0.0, 0.0]
 
    CALL MUMATERIAL_LOAD(TRIM(filename),istat, shar_comm, comm_master,comm_world)
-   CALL MUMATERIAL_SETD(maxerr, maxi, lambdaS, lambdaF, LambdaC, pad, cc) 
+   CALL MUMATERIAL_SET_VARS(max_error=maxerr, max_iter = maxi, &
+         max_depth = depth, max_leafsize = leaf, iter_theta=theta, eval_theta=theta, &
+         min_conv_perc=cc, lambda_start = lambdaS, lambda_factor = lambdaF) 
+   IF (lhasMfile) CALL MUMATERIAL_MAGFILE_READ(TRIM(Mfile))
 
-   IF (lismaster) CALL MUMATERIAL_INFO(6)
+   IF (lismaster) CALL MUMATERIAL_INFO(6, lnoiter)
    CALL MPI_BARRIER(comm_world, istat)
 
-   IF (lismaster) THEN
-      CALL SYSTEM_CLOCK(count_rate=rate)
-      CALL SYSTEM_CLOCK(start)
-   END IF
+   IF (NOT(lnoiter)) THEN
+      IF (lismaster) THEN
+         CALL SYSTEM_CLOCK(count_rate=rate)
+         CALL SYSTEM_CLOCK(start)
+      END IF
 
-   CALL MUMATERIAL_INIT_NEW(BEXTERNAL, offset)
+      CALL MUMATERIAL_RUN(BEXTERNAL, offset, linitM = .NOT.lhasMfile)
 
-   IF (lismaster) THEN
-      CALL SYSTEM_CLOCK(finish)
-      WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
-      
-      OPEN(14, file='./time.dat')
-      WRITE(14,"(E15.7)") real(finish-start)/real(rate)
-      CLOSE(14)
+      IF (lismaster) THEN
+         CALL SYSTEM_CLOCK(finish)
+         WRITE(*,*) "Time to finish loading: ", real(finish-start)/real(rate)
+         
+         OPEN(14, file='./time.dat')
+         WRITE(14,"(E15.7)") real(finish-start)/real(rate)
+         CLOSE(14)
+      END IF
    END IF
    
    CALL gen_grid(x, y, z)
    
-   CALL MUMATERIAL_OUTPUT('./', x, y, z, BEXTERNAL)!, .TRUE.)
-
+   CALL MUMATERIAL_OUTPUT('./', x, y, z, .TRUE.)
+   
+   IF (loutmag) CALL MUMATERIAL_MAGFILE_WRITE('test')
+   
    CALL MUMATERIAL_FREE()
 
-   IF (lismaster) THEN
+   IF (lismaster.AND.NOT(lnoiter)) THEN
       CALL SYSTEM_CLOCK(finish)
       WRITE(*,*) "Time to finish: ", real(finish-start)/real(rate)
    END IF

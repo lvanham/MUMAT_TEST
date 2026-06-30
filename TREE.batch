@@ -1,0 +1,62 @@
+#!/bin/bash
+#SBATCH -J DEBUG
+#SBATCH --mail-user=lucas.van.ham@ipp.mpg.de
+#SBATCH -p express
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=128
+#SBATCH -t 0:05:00
+#SBATCH -o o.%j.%x
+#SBATCH -e e.%j.%x
+
+#OpenMP settings:
+export OMP_NUM_THREADS=1
+export OMP_PLACES=threads
+export OMP_PROC_BIND=spread
+
+#HDF5 settings (for projects)
+export HDF5_USE_FILE_LOCKING=FALSE
+
+#RUN settings
+export TET=18221
+export PAD=20
+export NODES=4
+export CODE=~/src/MUMAT_TEST/xmumat_test
+export MUMAT=~/src/MUMAT_TEST/hollow_sphere_mu_"$TET".dat
+export PADFACTOR=20.0
+export LAMBDASTART=0.1
+export LAMBDAFACTOR=0.75
+export LAMBDACOUNT=25
+export MAXERROR=0.001
+export MAXITER=10000
+export CONVCHECK=100.0
+export DEPTH=30
+export LEAF=8
+export THETA=0.20
+
+#Create Directory
+cd $SLURM_SUBMIT_DIR
+export WORKDIR=/ptmp/lucv 
+export JOBDIR=$SLURM_JOB_NAME.$SLURM_JOB_ID
+mkdir $WORKDIR/$JOBDIR
+cd $WORKDIR/$JOBDIR
+
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "Temp Dir is: " $WORKDIR/$JOBDIR
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+#run the application:
+echo "srun $CODE -mumat $MUMAT -lambdastart $LAMBDASTART -lambdafactor $LAMBDAFACTOR -maxerror $MAXERROR -maxiter $MAXITER -convcheck $CONVCHECK -depth $DEPTH -leaf $LEAF -theta $THETA"
+srun $CODE -mumat $MUMAT -lambdastart $LAMBDASTART -lambdafactor $LAMBDAFACTOR -maxerror $MAXERROR -maxiter $MAXITER -convcheck $CONVCHECK -depth $DEPTH -leaf $LEAF -theta $THETA"echo "srun $CODE -mumat $MUMAT -padfactor $PADFACTOR -lambdastart $LAMBDASTART -lambdafactor $LAMBDAFACTOR -lambdacount $LAMBDACOUNT -maxerror $MAXERROR -maxiter $MAXITER -convcheck $CONVCHECK
+
+
+# Now CLEANUP
+echo " "
+echo " "
+echo "  Copying files:"
+echo "     From: " $WORKDIR/$JOBDIR
+echo "     To:   " $SLURM_SUBMIT_DIR
+cp $WORKDIR/$JOBDIR/B.dat $SLURM_SUBMIT_DIR/B_tree.dat
+cp $WORKDIR/$JOBDIR/points.dat $SLURM_SUBMIT_DIR/points.dat
+
+echo " "
+echo " "
